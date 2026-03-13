@@ -1,0 +1,285 @@
+/* ==========================================================================
+   1. CONFIGURAÇÕES GERAIS E RESET
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- VARIAVEIS DE CORES (MODO CLARO - PADRÃO) --- */
+:root { 
+    --primary: #C42021; 
+    --secondary: #FFB300; 
+    --bg-body: #E5E7EB; 
+    --bg-card: #FFFFFF; 
+    --text-dark: #111827; 
+    --text-gray: #6B7280; 
+    --border: #D1D5DB; 
+    --shadow: rgba(0, 0, 0, 0.05);
+}
+
+/* --- VARIAVEIS (MODO ESCURO) --- */
+body.dark-mode {
+    --bg-body: #111827;
+    --bg-card: #1F2937;
+    --text-dark: #F9FAFB;
+    --text-gray: #9CA3AF;
+    --border: #374151;
+    --shadow: rgba(0, 0, 0, 0.25);
+}
+
+/* Ajustes Globais */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-dark);
+}
+
+body.dark-mode input, 
+body.dark-mode select, 
+body.dark-mode textarea {
+    background-color: #374151;
+    color: white;
+    border-color: #4B5563;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--text-gray); }
+
+/* ==========================================================================
+   2. HEADER E NOTIFICAÇÕES
+   ========================================================================== */
+.notification-wrapper { position: relative; cursor: pointer; margin-right: 20px; display: flex; align-items: center; }
+.notification-icon { font-size: 1.4rem; color: var(--text-gray); transition: 0.2s; }
+.notification-icon:hover { color: var(--primary); }
+.notification-badge { position: absolute; top: -5px; right: -5px; background-color: #EF4444; color: white; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 10px; border: 2px solid var(--bg-card); display: none; }
+
+.notification-dropdown { position: absolute; top: 50px; right: -10px; width: 340px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: none; flex-direction: column; z-index: 2001; overflow: hidden; }
+.notification-dropdown.active { display: flex; animation: fadeIn 0.2s; }
+.notif-header { padding: 12px 15px; background: rgba(0,0,0,0.03); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 0.9rem; color: var(--text-dark); }
+.btn-mark-read { font-size: 0.75rem; color: var(--primary); background: none; border: none; cursor: pointer; text-decoration: underline; }
+.notif-list { max-height: 350px; overflow-y: auto; }
+.notif-item { padding: 12px 15px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: start; transition: 0.2s; cursor: pointer; background: var(--bg-card); }
+.notif-item:hover { background: rgba(0,0,0,0.03); }
+.notif-item.unread { background: #FEF2F2; border-left: 3px solid var(--primary); }
+body.dark-mode .notif-item.unread { background: rgba(196, 32, 33, 0.15); }
+.notif-icon-box { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.9rem; }
+.bg-create { background: #E6FFFA; color: #319795; }
+.bg-reopen { background: #FFF5F5; color: #E53E3E; }
+.notif-content p { margin: 0 0 4px 0; font-size: 0.85rem; color: var(--text-dark); line-height: 1.4; font-weight: 500; }
+.notif-content small { font-size: 0.75rem; color: var(--text-gray); }
+.empty-notif { padding: 30px; text-align: center; color: var(--text-gray); font-size: 0.9rem; }
+
+/* ==========================================================================
+   3. TOASTS
+   ========================================================================== */
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.toast { min-width: 300px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 15px; animation: slideIn 0.3s ease-out; border-left: 5px solid; font-size: 0.95rem; font-weight: 500; color: #111827; }
+.toast-success { border-color: #48BB78; color: #2F855A; }
+.toast-error { border-color: #F56565; color: #C53030; }
+.toast-info { border-color: #4299E1; color: #2B6CB0; }
+
+/* ==========================================================================
+   4. MENU DE PERFIL
+   ========================================================================== */
+.user-info { position: relative; cursor: pointer; }
+.profile-popup { position: absolute; top: 100%; right: 0; margin-top: 15px; background: var(--bg-card); width: 220px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid var(--border); display: none; flex-direction: column; z-index: 2000; overflow: hidden; }
+.profile-popup.active { display: flex; animation: fadeIn 0.2s; }
+.profile-header { padding: 15px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.03); }
+.profile-header p { margin: 0; font-size: 0.85rem; color: var(--text-gray); }
+.profile-header strong { display: block; color: var(--text-dark); font-size: 1rem; }
+.profile-menu-item { padding: 12px 20px; text-decoration: none; color: var(--text-gray); display: flex; align-items: center; gap: 10px; transition: 0.2s; cursor: pointer; font-size: 0.9rem; }
+.profile-menu-item:hover { background: rgba(0,0,0,0.05); color: var(--primary); }
+.profile-menu-item.logout { color: #E53E3E; border-top: 1px solid var(--border); }
+.profile-menu-item.logout:hover { background: #FFF5F5; }
+
+/* ==========================================================================
+   5. BOTÃO FLUTUANTE DE TEMA
+   ========================================================================== */
+.theme-toggle-btn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--border); background-color: var(--bg-card); color: var(--text-dark); box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 9998; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: all 0.3s ease; }
+.theme-toggle-btn:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.25); color: var(--primary); }
+
+/* ==========================================================================
+   6. MODAIS
+   ========================================================================== */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(4px); animation: fadeInOverlay 0.3s forwards; }
+.modal-box, .modal-content { background-color: var(--bg-card); color: var(--text-dark); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-height: 90vh; overflow-y: auto; width: 700px; max-width: 95%; border-radius: 16px; padding: 40px; transform: scale(0.95); animation: scaleInModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; position: relative; }
+
+.modal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; position: relative; }
+.modal-header h3 { font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--text-dark); text-align: center; }
+.close-modal, .modal-header i.fa-times { position: absolute; right: 0; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.4rem; color: var(--text-gray); transition: 0.2s; }
+.close-modal:hover { color: var(--primary); }
+.modal-body { padding: 10px 0; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleInModal { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ==========================================================================
+   7. DETALHES DO CHAMADO
+   ========================================================================== */
+.detail-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.detail-label { width: 160px; font-weight: 500; color: var(--text-gray); font-size: 0.95rem; flex-shrink: 0; }
+.detail-value { color: var(--text-dark); font-weight: 600; font-size: 1rem; flex: 1; }
+.description-box { background: var(--bg-body); padding: 20px; border: 1px solid var(--border); border-radius: 8px; line-height: 1.6; color: var(--text-dark); font-weight: 500; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.9rem; color: var(--text-gray); margin-bottom: 6px; font-weight: 600; }
+.input-dark, .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; background-color: var(--bg-body); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dark); outline: none; transition: border-color 0.2s; font-weight: 600; }
+.input-dark:focus, .form-group input:focus { border-color: var(--primary); }
+
+/* ==========================================================================
+   8. MODAL DE PERFIL (ESPECÍFICO)
+   ========================================================================== */
+#profileModal .modal-content { width: 450px !important; padding: 25px; }
+#profileModal .modal-header { justify-content: space-between; padding-bottom: 15px; margin-bottom: 20px; }
+#profileModal .modal-header .close-modal { position: static; transform: none; }
+.profile-photo-section { display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; }
+.photo-container { position: relative; width: 110px; height: 110px; }
+.photo-container img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid var(--bg-card); box-shadow: 0 0 0 3px var(--primary); }
+.edit-photo-btn { position: absolute; bottom: 5px; right: 5px; background: var(--primary); color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 3px solid var(--bg-card); transition: transform 0.2s, background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+.edit-photo-btn:hover { background: #b91c1c; transform: scale(1.1); }
+.photo-hint { font-size: 0.85rem; color: var(--text-gray); margin-top: 10px; }
+.profile-settings { margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border); }
+.setting-item { display: flex; justify-content: space-between; align-items: center; }
+.setting-info { display: flex; flex-direction: column; }
+.setting-title { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
+.setting-desc { font-size: 0.8rem; color: var(--text-gray); margin-top: 2px; }
+.switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #9CA3AF; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+input:checked + .slider { background-color: var(--primary); }
+input:checked + .slider:before { transform: translateX(24px); }
+body.dark-mode .slider { background-color: #4B5563; }
+body.dark-mode input:checked + .slider { background-color: var(--primary); }
+
+/* ==========================================================================
+   9. FOOTER DO MODAL (BOTÕES)
+   ========================================================================== */
+.modal-footer { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 15px; }
+.btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-gray); padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+.btn-cancel:hover { background: rgba(0, 0, 0, 0.05); color: var(--text-dark); border-color: #9CA3AF; transform: translateY(-1px); }
+body.dark-mode .btn-cancel:hover { background: rgba(255, 255, 255, 0.1); color: #fff; border-color: #D1D5DB; }
+.btn-save { background: var(--primary); border: 1px solid var(--primary); color: white; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+.btn-save:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
+
+/* ==========================================================================
+   10. BOTÕES DE ANEXO (PADRÃO SISTEMA)
+   ========================================================================== */
+/* Botões Visualizar (Azul) e Baixar (Verde) com padrão do sistema */
+.btn-anexo-container { display: flex; gap: 10px; align-items: center; }
+
+.btn-blue, .btn-green {
+    text-decoration: none; 
+    color: white; 
+    padding: 10px 20px; 
+    border-radius: 8px; /* Arredondado padrão */
+    font-size: 0.9rem; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-weight: 600; 
+    transition: all 0.2s ease; 
+    border: none; 
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-blue { background-color: #3B82F6; }
+.btn-blue:hover { background-color: #2563EB; transform: translateY(-1px); }
+
+.btn-green { background-color: #10B981; }
+.btn-green:hover { background-color: #059669; transform: translateY(-1px); }
+
+/* ==========================================================================
+   11. TABELAS
+   ========================================================================== */
+.table-responsive { overflow-x: auto; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { padding: 15px; text-align: left; background-color: rgba(0,0,0,0.03); border-bottom: 2px solid var(--border); color: var(--text-dark) !important; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 15px; vertical-align: middle; border-bottom: 1px solid var(--border); font-size: 0.95rem; color: var(--text-dark); }
+tr:hover td { background-color: rgba(0,0,0,0.02); }
+body.dark-mode th { background-color: #1f2937 !important; border-color: #374151; color: #F9FAFB !important; }
+
+/* ==========================================================================
+   12. CONFIRMAÇÃO E ALERTA (PADRÃO UNIFICADO)
+   ========================================================================== */
+.icon-alert-container { 
+    background-color: #FEF2F2; 
+    width: 80px; height: 80px; 
+    border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; 
+    margin: 0 auto 20px auto; 
+}
+body.dark-mode .icon-alert-container { background-color: rgba(239, 68, 68, 0.15); }
+
+/* --- CORREÇÃO DO ALINHAMENTO DOS BOTÕES --- */
+.modal-buttons-container {
+    display: flex;
+    flex-direction: row !important; /* Força ficar um ao lado do outro */
+    justify-content: center;        /* Centraliza o grupo de botões */
+    align-items: center;
+    gap: 15px;                      /* Espaço entre os botões */
+    margin-top: 25px;
+    width: 100%;
+}
+
+/* Estilo Base dos Botões do Modal de Confirmação */
+.btn-modal { 
+    padding: 10px 24px; 
+    border-radius: 10px; 
+    font-weight: 600; 
+    font-size: 0.95rem; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    gap: 8px; 
+    min-width: 120px;
+    width: auto !important; /* Garante que não ocupe 100% da linha */
+}
+
+/* Botão Cancelar */
+.btn-modal-cancel { 
+    background-color: transparent; 
+    color: var(--text-gray); 
+    border: 1px solid var(--border); 
+}
+.btn-modal-cancel:hover { 
+    background-color: rgba(0,0,0,0.05); 
+    color: var(--text-dark); 
+    border-color: #9CA3AF;
+    transform: translateY(-1px);
+}
+
+/* Botão Confirmar/Sim */
+.btn-modal-confirm { 
+    background-color: var(--primary); 
+    color: white; 
+    border: 1px solid var(--primary);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+}
+.btn-modal-confirm:hover { 
+    background-color: #b91c1c; 
+    transform: translateY(-1px); 
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); 
+}
+
+/* Ajustes para Modo Escuro */
+body.dark-mode .btn-modal-cancel { 
+    color: #9CA3AF; 
+    border-color: #4B5563; 
+}
+body.dark-mode .btn-modal-cancel:hover { 
+    background-color: rgba(255, 255, 255, 0.1); 
+    color: white; 
+    border-color: #D1D5DB; 
+}

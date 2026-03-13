@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Chamados - Kari-Kari</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css"> 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        /* Estilos Específicos desta Página */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-dark); padding: 20px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+        .header-bar { background-color: var(--bg-card); border-radius: 12px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .user-info { display: flex; align-items: center; gap: 12px; position: relative; cursor: pointer; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #EDF2F7; object-fit: cover; border: 1px solid var(--border); }
+        .header-icons { display: flex; align-items: center; gap: 20px; }
+        .header-icons i.fa-house { font-size: 1.2rem; color: var(--text-gray); cursor: pointer; transition: 0.2s; }
+        .header-icons i.fa-house:hover { color: var(--primary); }
+        .content-area { background-color: var(--bg-card); border-radius: 16px; padding: 30px; min-height: 600px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .actions-bar { display: flex; justify-content: space-between; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
+        .search-container { flex: 1; display: flex; gap: 10px; min-width: 300px; }
+        .search-input { flex: 1; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; background: #F8FAFC; outline: none; }
+        .filter-select-list { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #F8FAFC; outline: none; font-weight: 600; color: var(--text-dark); }
+        .btn-new { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .btn-new:hover { opacity: 0.9; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; } 
+        th { padding: 15px; text-align: left; background: #F9FAFB; border-bottom: 1px solid var(--border); color: var(--text-gray); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 15px; vertical-align: middle; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .status-concluido { background-color: #C6F6D5; color: #22543D; } 
+        .status-pendente { background-color: #FED7D7; color: #822727; }
+        .status-atribuido { background-color: #BEE3F8; color: #2C5282; }
+        .status-andamento { background-color: #C6F6D5; color: #22543D; }
+        .risk-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-block; }
+        .risk-baixo { background: #F0FFF4; color: #2F855A; border: 1px solid #C6F6D5; }
+        .risk-medio { background: #FFFFF0; color: #B7791F; border: 1px solid #FBD38D; }
+        .risk-alto { background: #FFF5F5; color: #C53030; border: 1px solid #FEB2B2; }
+        .btn-action-icon { cursor: pointer; padding: 8px; border-radius: 6px; transition: 0.2s; color: var(--text-gray); }
+        .btn-action-icon:hover { background: #EDF2F7; color: var(--text-dark); }
+        .prazo-expirado { color: #9CA3AF; font-size: 0.8rem; font-weight: 600; cursor: not-allowed; display: inline-flex; align-items: center; gap: 4px; padding: 8px; }
+
+        /* MODAL */
+        .modal-box { padding: 50px; }
+        .modal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; position: relative; }
+        .modal-header h3 { margin: 0; font-size: 1.4rem; font-weight: 700; text-align: center; }
+        .modal-header .close-modal, .modal-header i.fa-times { position: absolute; right: 0; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; color: var(--text-gray); }
+        .detail-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f7f7f7; }
+        .detail-label { width: 170px; font-weight: 500; color: var(--text-gray); font-size: 0.95rem; flex-shrink: 0; }
+        .detail-value { color: var(--text-dark); font-weight: 600; font-size: 1rem; flex: 1; }
+        .description-box { background: var(--bg-body); padding: 20px; border: 1px solid var(--border); border-radius: 8px; line-height: 1.6; color: var(--text-dark); font-weight: 500; }
+        body.dark-mode .description-box { background: #374151; border-color: #4B5563; color: #F3F4F6; }
+        body.dark-mode .detail-value { color: #F9FAFB; }
+        body.dark-mode .detail-row { border-bottom-color: #374151; }
+        .form-group { margin-bottom: 15px; } 
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-gray); } 
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); outline: none; color: var(--text-dark); font-weight: 600; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); background: white; }
+        body.dark-mode .form-group input, body.dark-mode .form-group select, body.dark-mode .form-group textarea { background-color: #374151; color: white; border-color: #4B5563; }
+        .btn-anexo { text-decoration: none; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: transform 0.2s; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-anexo:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header-bar">
+            <div class="user-info" onclick="toggleProfileMenu(event)">
+                <img src="" class="avatar" id="userAvatar">
+                <div class="user-text"><h4 id="displayUser" style="margin:0">...</h4><small id="displayRole" style="color:var(--text-gray)">... </small></div>
+                <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
+                    <div class="profile-header"><strong id="menuUser">Usuário</strong><p id="menuRole">Cargo</p></div>
+                    <a class="profile-menu-item" onclick="toggleProfileModal()"><i class="fa-regular fa-user"></i> Meu Perfil</a>
+                    <div class="profile-menu-item logout" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</div>
+                </div>
+            </div>
+            <div class="header-icons"><i class="fa-solid fa-house" id="btnHome" onclick="window.location.href='index.html'" title="Home"></i></div>
+        </header>
+
+        <div class="toast-container" id="toastContainer"></div>
+
+        <main class="content-area">
+            <div class="actions-bar">
+                <div class="search-container">
+                    <select id="filtroData" class="filter-select-list" onchange="renderizarTabela()">
+                        <option value="hoje">Hoje</option><option value="7dias">Últimos 7 dias</option><option value="30dias" selected>Últimos 30 dias</option><option value="todos">Todos</option>
+                    </select>
+                    <input type="text" class="search-input" id="searchInput" placeholder="Pesquisar..." onkeyup="renderizarTabela()">
+                </div>
+                <button class="btn-new" onclick="abrirModal('modalNovoChamado')"><i class="fa-solid fa-plus"></i> Novo Chamado</button>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaChamados">
+                    <thead><tr><th>ID</th><th>Título</th><th>Nível</th><th>Risco</th><th>Tipo</th><th>Status</th><th style="text-align:center">Ações</th></tr></thead>
+                    <tbody id="listaChamadosBody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
+    
+    <div class="modal-overlay" id="modalDetalhes">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Detalhes do Chamado</h3>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalDetalhes')"></i>
+            </div>
+            <div id="conteudoDetalhes"></div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="modalNovoChamado">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Novo Chamado</h3>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalNovoChamado')"></i>
+            </div>
+            <div class="form-group"><label>Título:</label><input id="inputTitulo" placeholder="Resumo do problema"></div>
+            <div class="form-group"><label>Origem:</label><select id="inputOrigem"><option>Computador</option><option>Impressora</option><option>Sankhya</option><option>Office 365</option><option>Outros</option></select></div>
+            <div class="form-group"><label>Tipo:</label><select id="inputTipo"><option>Incidente/Ocorrência</option><option>Dúvidas</option><option>Tarefa/Solicitação</option></select></div>
+            <div class="form-group"><label>Descrição Detalhada:</label><textarea id="inputDescricao" rows="4"></textarea></div>
+            <div class="form-group">
+                <label>Anexar Arquivo (Print/Doc):</label>
+                <div style="display:flex; align-items:center; gap:10px; border:1px solid var(--border); padding:10px; border-radius:8px; background:var(--bg-body)">
+                    <i class="fa-solid fa-cloud-arrow-up" style="color:var(--text-gray)"></i>
+                    <input type="file" id="inputAnexo" style="border:none; padding:0; background:transparent">
+                </div>
+                <input type="hidden" id="anexoBase64">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="fecharModal('modalNovoChamado')">Cancelar</button> 
+                <button class="btn-save" onclick="salvarChamado()">Criar Chamado</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Meu Perfil</h3><span class="close-modal" onclick="toggleProfileModal()">&times;</span></div>
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="photo-container"><img id="profilePreview" src="" alt="Foto"><label for="photoUpload" class="edit-photo-btn"><i class="fas fa-camera"></i></label><input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)"><input type="hidden" id="newPhotoBase64"></div>
+                    <p class="photo-hint">Clique na câmera para alterar</p>
+                </div>
+                <div class="profile-details-form">
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="profileName" readonly class="input-dark"></div>
+                    <div class="form-group"><label>E-mail</label><input type="email" id="profileEmail" readonly class="input-dark"></div>
+                    <div class="form-group"><label>Setor/Departamento</label><input type="text" id="profileDept" readonly class="input-dark"></div>
+                </div>
+                <div class="profile-settings"><div class="setting-item"><div class="setting-info"><span class="setting-title">Notificações</span><span class="setting-desc">Receber alertas e popups</span></div><label class="switch"><input type="checkbox" id="notifyToggle"><span class="slider round"></span></label></div></div>
+            </div>
+            <div class="modal-footer"><button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button><button class="btn-save" onclick="saveProfile()">Salvar Alterações</button></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalPreview">
+        <div class="modal-box" style="width: 95%; height: 95%; max-width: none; padding: 0; display: flex; flex-direction: column;">
+            <div class="modal-header" style="padding: 15px 25px; margin-bottom: 0; border-bottom: 1px solid var(--border); position: relative;">
+                <h3 style="margin:0;">Visualizar Anexo</h3>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalPreview')" style="position: absolute; right: 25px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;"></i>
+            </div>
+            <div class="modal-body" id="previewContent" style="flex: 1; padding: 0; background: #2d3748; display: flex; justify-content: center; align-items: center; overflow: hidden;"></div>
+        </div>
+    </div>
+    
+    <script src="global.js"></script>
+
+    <script>
+        const API_URL = "http://192.168.100.132:3000/api";
+        const SOCKET_URL = "http://192.168.100.132:3000";
+        
+        const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+        if (!usuarioLogado) window.location.href = "login.html";
+        
+        document.getElementById("displayUser").innerText = usuarioLogado.nome;
+        document.getElementById("displayRole").innerText = usuarioLogado.role;
+        document.getElementById("menuUser").innerText = usuarioLogado.nome; 
+        document.getElementById("menuRole").innerText = usuarioLogado.role; 
+        if(usuarioLogado.foto) document.getElementById('userAvatar').src = usuarioLogado.foto;
+
+        if (usuarioLogado.role !== 'Admin' && usuarioLogado.role !== 'Desenvolvedor') {
+            const btnHome = document.getElementById('btnHome');
+            if(btnHome) btnHome.style.display = 'none';
+        }
+
+        function carregarTema() {
+            const temaSalvo = localStorage.getItem('theme');
+            const btnIcon = document.querySelector('.theme-toggle-btn i');
+            if (temaSalvo === 'dark') {
+                document.body.classList.add('dark-mode');
+                if(btnIcon) btnIcon.className = 'fa-solid fa-sun';
+            } else {
+                document.body.classList.remove('dark-mode');
+                if(btnIcon) btnIcon.className = 'fa-solid fa-moon';
+            }
+        }
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            const btnIcon = document.querySelector('.theme-toggle-btn i');
+            if(btnIcon) btnIcon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+        carregarTema();
+
+        let chamadosDB = [];
+        const socket = io(SOCKET_URL);
+        socket.on('atualizar_kanban', () => { console.log("Atualização recebida"); carregarDados(); });
+
+        async function carregarDados() { 
+            try { 
+                const r = await fetch(`${API_URL}/chamados`); 
+                chamadosDB = await r.json(); 
+                renderizarTabela(); 
+            } catch (e) { console.error(e); showToast("Erro ao carregar dados.", "error"); } 
+        }
+
+        function renderizarTabela() { 
+            const tbody = document.getElementById('listaChamadosBody'); 
+            tbody.innerHTML = ""; 
+            let lista = chamadosDB; 
+            
+            if(usuarioLogado.role !== "Admin" && usuarioLogado.role !== "Desenvolvedor") { 
+                lista = chamadosDB.filter(c => c.criador_email === usuarioLogado.email); 
+            } 
+            
+            const filtroData = document.getElementById('filtroData').value;
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            
+            lista = lista.filter(c => {
+                if (filtroData === 'todos') return true;
+                if (!c.data_abertura) return false;
+                const dataChamado = new Date(c.data_abertura); dataChamado.setHours(0,0,0,0);
+                if (filtroData === 'hoje') return dataChamado.getTime() === hoje.getTime();
+                if (filtroData === '7dias') { const d = new Date(hoje); d.setDate(hoje.getDate()-7); return dataChamado >= d; }
+                if (filtroData === '30dias') { const d = new Date(hoje); d.setDate(hoje.getDate()-30); return dataChamado >= d; }
+                return true;
+            });
+            
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            if(termo) lista = lista.filter(c => c.titulo.toLowerCase().includes(termo) || c.id.toString().includes(termo));
+
+            if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#999">Nenhum chamado encontrado.</td></tr>'; return; }
+
+            lista.forEach(c => { 
+                const tr = document.createElement('tr'); 
+                let stRaw = c.status || 'pendente';
+                let stClass = stRaw.toLowerCase().replace(/\s/g, ''); 
+                
+                let btnReabrir = '';
+                if (stClass === 'concluido') {
+                    const dataRef = c.data_conclusao ? new Date(c.data_conclusao) : new Date(c.data_abertura);
+                    const dataAtual = new Date();
+                    
+                    const diffDias = Math.ceil(Math.abs(dataAtual - dataRef) / (1000 * 60 * 60 * 24));
+                    const mesmoMes = (dataAtual.getMonth() === dataRef.getMonth()) && (dataAtual.getFullYear() === dataRef.getFullYear());
+
+                    if (diffDias <= 7 && mesmoMes) {
+                        btnReabrir = `<i class="fa-solid fa-rotate-left btn-action-icon" style="color:orange;" title="Reabrir Chamado" onclick="reabrirChamado(${c.id})"></i>`;
+                    } else {
+                        btnReabrir = `<span class="prazo-expirado" title="Prazo de 7 dias ou virada de mês expirou"><i class="fa-solid fa-lock"></i> Expirado</span>`;
+                    }
+                }
+                
+                let iconeAnexo = c.anexo ? `<i class="fa-solid fa-paperclip" style="color:#718096; margin-right:5px; font-size:0.8rem" title="Com anexo"></i>` : '';
+                let riscoClass = 'risk-baixo';
+                if(c.risco_critico === 'Médio') riscoClass = 'risk-medio';
+                if(c.risco_critico === 'Alto') riscoClass = 'risk-alto';
+                
+                tr.innerHTML = `
+                    <td><b>#${c.id}</b></td>
+                    <td>${iconeAnexo}${c.titulo}</td>
+                    <td>${c.nivel||'N1'}</td>
+                    <td><span class="risk-badge ${riscoClass}">${c.risco_critico||'Baixo'}</span></td>
+                    <td>${c.tipo}</td>
+                    <td><span class="status-badge status-${stClass}">${stRaw}</span></td>
+                    <td style="text-align:center; display:flex; gap:5px; justify-content:center; align-items:center;">
+                        <i class="fa-solid fa-eye btn-action-icon" onclick="verDetalhes(${c.id})" title="Ver Detalhes"></i> 
+                        ${btnReabrir}
+                    </td>`; 
+                tbody.appendChild(tr); 
+            }); 
+        }
+
+        function verDetalhes(id) {
+            const c = chamadosDB.find(x => x.id === id);
+            if(!c) return;
+            
+            let totalMs = parseInt(c.timer_acumulado || 0);
+            if (c.status !== 'concluido') {
+                let inicioStr = c.timer_inicio || c.data_abertura;
+                if (inicioStr) { totalMs += (new Date().getTime() - new Date(inicioStr).getTime()); }
+            }
+            const h = Math.floor(totalMs / 3600000);
+            const m = Math.floor((totalMs % 3600000) / 60000);
+            let tempo = `${h}h ${m}m`;
+            let tempoStyle = c.status === 'concluido' ? "color:#2D3748; font-weight:bold" : "color:#FFB300; font-weight:bold";
+            let reabertura = c.reaberturas > 0 ? `<div style="color:#C53030; font-weight:700; margin-bottom:15px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #FED7D7"><i class="fa-solid fa-triangle-exclamation"></i> Reaberto ${c.reaberturas} vezes.</div>` : '';
+
+            // FORMATAÇÃO DE DATA/HORA
+            const formatarData = (dataStr) => {
+                if (!dataStr) return '-';
+                return new Date(dataStr).toLocaleString('pt-BR', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
+                });
+            };
+            const dataAberturaFmt = formatarData(c.data_abertura);
+            const dataEncerramentoFmt = formatarData(c.data_conclusao);
+
+            // BOTÕES DE ANEXO
+            let anexoHtml = '';
+            if (c.anexo) {
+                anexoHtml = `
+                <div class="detail-row" style="border-top: 1px solid #f7f7f7; padding-top: 15px;">
+                    <span class="detail-label">Anexos:</span>
+                    <span class="detail-value" style="display:flex; gap:10px; align-items:center;">
+                        <button onclick="abrirPreview(${c.id})" class="btn-anexo" style="background:#2C5282;">
+                            <i class="fa-solid fa-eye"></i> Visualizar
+                        </button>
+                        <a href="${c.anexo}" download="anexo_${c.id}" class="btn-anexo" style="background:#38A169;">
+                            <i class="fa-solid fa-download"></i> Baixar Arquivo
+                        </a>
+                    </span>
+                </div>`;
+            } else {
+                anexoHtml = `
+                <div class="detail-row" style="border-top: 1px solid #f7f7f7; padding-top: 15px;">
+                    <span class="detail-label">Anexos:</span>
+                    <span style="color:var(--text-gray); font-style:italic; font-weight:400">Nenhum anexo</span>
+                </div>`;
+            }
+
+            // CAIXA DE SOLUÇÃO (Aparece apenas se houver solução)
+            let solucaoHtml = '';
+            if (c.solucao && c.solucao.trim() !== '') {
+                solucaoHtml = `
+                <div class="form-group" style="margin-top:25px;">
+                    <label style="color:#2F855A; font-size:1rem;"><i class="fa-solid fa-check-circle"></i> Solução / Resposta da TI:</label>
+                    <div class="description-box" style="background:#F0FFF4; border-color:#C6F6D5; color:#22543D; font-weight: 600;">
+                        ${c.solucao}
+                    </div>
+                </div>`;
+            }
+
+            // HTML DO MODAL COMBINADO
+            const html = `${reabertura}
+                <div class="detail-row"><span class="detail-label">ID:</span><span class="detail-value">#${c.id}</span></div>
+                <div class="detail-row"><span class="detail-label">Título:</span><span class="detail-value" style="font-size: 1.1rem; color: #C42021;">${c.titulo}</span></div>
+                
+                <div class="detail-row"><span class="detail-label">Solicitante:</span><span class="detail-value">${c.solicitante_nome || c.criador_email}</span></div>
+                <div class="detail-row"><span class="detail-label">Setor do Solicitante:</span><span class="detail-value">${c.setor || 'Não informado'}</span></div>
+                
+                <div class="detail-row"><span class="detail-label">Status:</span><span class="detail-value" style="text-transform:uppercase;">${c.status}</span></div>
+                <div class="detail-row"><span class="detail-label">Dev Responsável:</span><span class="detail-value">${c.dev_responsavel || 'Aguardando'}</span></div>
+                
+                <div class="detail-row"><span class="detail-label">Data de Abertura:</span><span class="detail-value">${dataAberturaFmt}</span></div>
+                <div class="detail-row"><span class="detail-label">Encerrado em:</span><span class="detail-value">${c.status === 'concluido' ? dataEncerramentoFmt : '<i style="color:var(--text-gray); font-weight:400;">Em andamento...</i>'}</span></div>
+                
+                <div class="detail-row"><span class="detail-label">Tempo Trabalhado:</span><span style="${tempoStyle}">${tempo}</span></div>
+                
+                <div class="form-group" style="margin-top:25px"><label>Descrição:</label><div class="description-box">${c.descricao}</div></div>
+                
+                ${anexoHtml}
+
+                ${solucaoHtml}`; 
+            
+            document.getElementById('conteudoDetalhes').innerHTML = html;
+            abrirModal('modalDetalhes');
+        }
+
+        function abrirPreview(id) {
+            const c = chamadosDB.find(x => x.id === id);
+            if (!c || !c.anexo) { showToast("Anexo não encontrado.", "error"); return; }
+            const container = document.getElementById('previewContent');
+            container.innerHTML = ''; 
+            if (c.anexo.startsWith('data:image')) {
+                container.innerHTML = `<img src="${c.anexo}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+            } else if (c.anexo.startsWith('data:application/pdf')) {
+                container.innerHTML = `<iframe src="${c.anexo}" style="width:100%; height:100%; border:none;"></iframe>`;
+            } else {
+                container.innerHTML = `<div style="text-align:center; color:#fff"><h3>Formato não suportado para visualização rápida.</h3><p>Por favor, utilize o botão "Baixar".</p></div>`;
+            }
+            abrirModal('modalPreview');
+        }
+
+        function podeReabrir(chamado) {
+            if (!chamado.data_conclusao) return true; 
+            const dataConclusao = new Date(chamado.data_conclusao);
+            const agora = new Date();
+            
+            if (agora.getMonth() !== dataConclusao.getMonth() || agora.getFullYear() !== dataConclusao.getFullYear()) {
+                showToast("Bloqueado: Mês virou.", "error"); return false;
+            }
+            
+            const diffDias = Math.ceil(Math.abs(agora - dataConclusao) / (1000 * 60 * 60 * 24)); 
+            if (diffDias > 7) { 
+                showToast("Bloqueado: Prazo de 7 dias expirou.", "error"); return false; 
+            }
+            
+            return true;
+        }
+
+        async function reabrirChamado(id) { 
+            const c = chamadosDB.find(x => x.id === id);
+            if (!podeReabrir(c)) return;
+            
+            openConfirmModal("Deseja realmente reabrir este chamado?", async () => {
+                try {
+                    const payload = { status: 'pendente', dev_responsavel: null, data_conclusao: null, reaberturas: (c.reaberturas||0)+1, timer_inicio: new Date().toISOString() };
+                    await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+                    showToast("Chamado reaberto!", "success");
+                } catch(e) { showToast("Erro ao reabrir.", "error"); }
+            });
+        }
+
+        async function salvarChamado() { 
+            const titulo = document.getElementById('inputTitulo').value;
+            const desc = document.getElementById('inputDescricao').value;
+            const tipoSelecionado = document.getElementById('inputTipo').value;
+            
+            if(!titulo.trim() || !desc.trim()) { 
+                showToast("Preencha título e descrição.", "info"); 
+                return; 
+            }
+
+            // --- NOVA REGRA: Risco Automático para Incidentes ---
+            let riscoInicial = "Nenhum"; // Padrão para Dúvidas e Tarefas
+            if (tipoSelecionado.includes('Incidente') || tipoSelecionado.includes('Ocorrência')) {
+                riscoInicial = "Baixo";
+            }
+
+            const novo = { 
+                titulo: titulo, 
+                origem: document.getElementById('inputOrigem').value, 
+                tipo: tipoSelecionado, 
+                descricao: desc, 
+                setor: usuarioLogado.setor || "Geral", 
+                prioridade: 3, 
+                nivel: "N1", 
+                risco_critico: riscoInicial, // A mágica acontece aqui!
+                criador_email: usuarioLogado.email, 
+                solicitante_nome: usuarioLogado.nome, 
+                anexo: document.getElementById('anexoBase64').value,
+                timer_inicio: new Date().toISOString(), 
+                timer_acumulado: 0
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/chamados`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify(novo) 
+                });
+                
+                if(!res.ok) throw new Error();
+                const dados = await res.json();
+                
+                fecharModal('modalNovoChamado'); 
+                
+                document.getElementById('inputTitulo').value = ""; 
+                document.getElementById('inputDescricao').value = ""; 
+                document.getElementById('inputAnexo').value = ""; 
+                document.getElementById('anexoBase64').value = "";
+                
+                if(typeof openSuccessModal === 'function') {
+                    openSuccessModal(`Chamado #${dados.id} criado!`, () => carregarDados()); 
+                } else { 
+                    showToast(`Chamado #${dados.id} criado!`, "success"); 
+                    carregarDados(); 
+                }
+            } catch(e) { 
+                showToast("Erro ao criar chamado.", "error"); 
+            }
+        }
+
+        document.getElementById('inputAnexo').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { document.getElementById('anexoBase64').value = e.target.result; };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        window.addEventListener('click', function(event) {
+            const modais = ['modalDetalhes', 'modalNovoChamado', 'profileModal', 'modalPreview'];
+            modais.forEach(id => {
+                const el = document.getElementById(id);
+                if (event.target === el) {
+                    if(id === 'profileModal') toggleProfileModal();
+                    else fecharModal(id);
+                }
+            });
+        });
+
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal.style.display === 'flex') { modal.style.display = 'none'; } else { modal.style.display = 'flex'; loadUserData(); const menu = document.getElementById('profileMenu'); if(menu) menu.classList.remove('active'); }
+        }
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() { document.getElementById('profilePreview').src = reader.result; document.getElementById('newPhotoBase64').value = reader.result; }
+            if (event.target.files[0]) { reader.readAsDataURL(event.target.files[0]); }
+        }
+        function loadUserData() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            if(!user) return;
+            document.getElementById('profileName').value = user.nome; document.getElementById('profileEmail').value = user.email; document.getElementById('profileDept').value = user.setor || '';
+            document.getElementById('notifyToggle').checked = user.recebe_notificacao !== false;
+            document.getElementById('profilePreview').src = user.foto || 'https://via.placeholder.com/150';
+            document.getElementById('newPhotoBase64').value = "";
+        }
+        async function saveProfile() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            const newPhoto = document.getElementById('newPhotoBase64').value;
+            const notifyStatus = document.getElementById('notifyToggle').checked;
+            if(!user || !user.id) return;
+            try { await fetch(`${API_URL}/usuarios/${user.id}/notificacoes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recebe_notificacao: notifyStatus }) }); user.recebe_notificacao = notifyStatus; } catch(e) {}
+            if (newPhoto) {
+                try {
+                    const res = await fetch(`${API_URL}/usuarios/${user.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: user.nome, email: user.email, setor: user.setor, role: user.role, foto: newPhoto }) });
+                    if(res.ok) { user.foto = newPhoto; document.getElementById('userAvatar').src = newPhoto; }
+                } catch(e) {}
+            }
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(user));
+            showToast("Perfil atualizado!", "success");
+            toggleProfileModal();
+        }
+
+        carregarDados();
+    </script>
+</body>
+</html>

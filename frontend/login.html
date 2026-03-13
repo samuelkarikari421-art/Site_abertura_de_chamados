@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Kari-Kari TI</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Estilos específicos para centralizar o Login */
+        body { 
+            display: flex; 
+            flex-direction: column; /* Alterado para empilhar itens verticalmente */
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: var(--bg-body); 
+            margin: 0;
+            position: relative; /* Para posicionamento do footer se necessário */
+        }
+
+        .login-box { 
+            background: var(--bg-card); 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            width: 100%;
+            max-width: 350px; 
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .login-box img {
+            height: 60px;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-gray);
+        }
+
+        .input-group input { 
+            width: 100%; 
+            padding: 12px 15px 12px 40px; 
+            border: 1px solid var(--border); 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            outline: none;
+            background: var(--bg-body);
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(196, 32, 33, 0.1);
+        }
+
+        /* --- ESTILO DO CHECKBOX "LEMBRAR-ME" --- */
+        .remember-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 15px;
+            padding-left: 5px;
+            gap: 8px;
+        }
+
+        .remember-container input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary); /* Cor do checkbox */
+        }
+
+        .remember-container label {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            cursor: pointer;
+            user-select: none;
+        }
+        /* -------------------------------------- */
+
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 1rem;
+            transition: 0.2s;
+            margin-top: 5px;
+        }
+
+        button:hover { 
+            opacity: 0.9; 
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* --- ESTILO DOS DIREITOS AUTORAIS --- */
+        .footer-credits {
+            position: absolute;
+            bottom: 20px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+        
+        .footer-credits strong {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <img src="Imagens/logo.png" alt="Logo Kari-Kari">
+        
+        <div class="input-group">
+            <i class="fa-solid fa-envelope"></i>
+            <input type="email" id="email" placeholder="Email" onkeypress="handleEnter(event)">
+        </div>
+        
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="senha" placeholder="Senha" onkeypress="handleEnter(event)">
+        </div>
+        
+        <div class="remember-container">
+            <input type="checkbox" id="lembrar">
+            <label for="lembrar">Lembrar de mim</label>
+        </div>
+        
+        <button onclick="login()" id="btnLogin">ENTRAR</button>
+    </div>
+
+    <div class="footer-credits">
+        &copy; 2026 Todos os direitos reservados.<br>
+        Desenvolvido por <strong>Samuel Henrique</strong><br>
+        (Analista e Desenvolvedor de Sistemas)
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="global.js"></script>
+
+    <script>
+        // Define API_URL usando a global ou fallback local
+        const API_URL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : `http://192.168.100.132:3000/api`;
+
+        // 1. Ao carregar a página, verifica se há dados salvos
+        document.addEventListener("DOMContentLoaded", () => {
+            const salvoEmail = localStorage.getItem("kari_saved_email");
+            const salvoSenha = localStorage.getItem("kari_saved_pass");
+            const salvoCheck = localStorage.getItem("kari_remember");
+
+            if (salvoCheck === "true" && salvoEmail) {
+                document.getElementById('email').value = salvoEmail;
+                // Preenche a senha se existir (cuidado com segurança em produção)
+                if(salvoSenha) document.getElementById('senha').value = salvoSenha;
+                document.getElementById('lembrar').checked = true;
+            }
+            
+            // Limpa sessão atual para garantir logout ao abrir esta tela
+            sessionStorage.removeItem("usuarioLogado");
+        });
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') login();
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+            const lembrar = document.getElementById('lembrar').checked;
+            const btn = document.getElementById('btnLogin');
+
+            if (!email || !senha) {
+                showToast("Preencha todos os campos.", "info");
+                return;
+            }
+
+            const textoOriginal = btn.innerText;
+            btn.innerText = "Carregando...";
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            try {
+                const res = await fetch(`${API_URL}/login`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'}, 
+                    body: JSON.stringify({email, senha}) 
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Login Sucesso
+                    sessionStorage.setItem("usuarioLogado", JSON.stringify(data.user));
+                    
+                    // Lógica para Salvar ou Limpar dados locais (Lembrar-me)
+                    if (lembrar) {
+                        localStorage.setItem("kari_saved_email", email);
+                        localStorage.setItem("kari_saved_pass", senha); 
+                        localStorage.setItem("kari_remember", "true");
+                    } else {
+                        localStorage.removeItem("kari_saved_email");
+                        localStorage.removeItem("kari_saved_pass");
+                        localStorage.removeItem("kari_remember");
+                    }
+
+                    showToast("Login realizado! Redirecionando...", "success");
+                    
+                    // --- REDIRECIONAMENTO INTELIGENTE ---
+                    setTimeout(() => {
+                        const role = (data.user.role || '').toLowerCase();
+                        
+                        if (role === 'user comum') {
+                            window.location.href = "chamados.html"; // Vai para o Kanban
+                        } else {
+                            window.location.href = "index.html"; // Vai para a Dashboard
+                        }
+                    }, 1000);
+
+                } else {
+                    showToast(data.message || "Credenciais inválidas.", "error");
+                }
+            } catch(e) { 
+                console.error(e);
+                showToast("Erro de conexão com o servidor.", "error"); 
+            } finally {
+                if (document.body.contains(btn)) {
+                    btn.innerText = textoOriginal;
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

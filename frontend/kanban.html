@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Kanban - Kari-Kari TI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* Estilos Locais */
+        :root { --bg-main: #F5F7FA; --bg-column: #F8FAFC; --text-primary: #2D3748; --text-secondary: #718096; --border-light: #E2E8F0; }
+        body.dark-mode { --bg-column: #1F2937; }
+        body.dark-mode .card { background-color: #374151; border-color: #4B5563; }
+        body.dark-mode .card-title { color: #F9FAFB; }
+        body.dark-mode .col-header { color: #111; } 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); min-height: 100vh; padding: 20px; color: var(--text-dark); margin: 0; }
+        .header-bar { background: var(--bg-card); padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .user-info { display: flex; align-items: center; gap: 15px; cursor: pointer; position: relative; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #EDF2F7; border: 2px solid var(--border); object-fit: cover; }
+        .header-icons { display: flex; align-items: center; gap: 25px; } 
+        .header-icons i.fa-house { font-size: 1.4rem; color: var(--text-gray); cursor: pointer; transition: 0.2s; }
+        .header-icons i.fa-house:hover { color: var(--primary); }
+        .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); color: var(--text-dark); background: var(--bg-card); font-weight: 600; cursor: pointer; outline: none; }
+        .kanban-board { display: flex; gap: 20px; min-height: 75vh; overflow-x: auto; padding-bottom: 20px; }
+        .column { background: var(--bg-column); min-width: 300px; width: 25%; padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .col-header { padding: 12px; text-align: center; font-weight: 700; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .col-pendente .col-header { background: #FEFCBF; color: #B7791F; }
+        .col-atribuido .col-header { background: #BEE3F8; color: #2C5282; }
+        .col-andamento .col-header { background: #C6F6D5; color: #22543D; }
+        .col-concluido .col-header { background: #FBD38D; color: #744210; }
+        .task-list { flex-grow: 1; min-height: 100px; transition: background 0.2s; }
+        .task-list.drag-over { background: rgba(196, 32, 33, 0.05); border: 2px dashed var(--primary); border-radius: 8px; }
+        .card { background: var(--bg-card); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.03); cursor: grab; transition: 0.2s; position: relative; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); border-color: var(--text-gray); }
+        .card:active { cursor: grabbing; }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .card-id { font-size: 0.8rem; font-weight: 700; color: var(--text-gray); }
+        .card-title { font-weight: 700; font-size: 1rem; margin-bottom: 2px; line-height: 1.4; color: var(--text-dark); }
+        .tag-nivel { font-size: 0.65rem; padding: 3px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tag-n1 { background: #E6FFFA; color: #2C7A7B; border: 1px solid #B2F5EA; }
+        .tag-n2 { background: #EBF8FF; color: #2B6CB0; border: 1px solid #BEE3F8; }
+        .tag-n3 { background: #FFF5F5; color: #C53030; border: 1px solid #FED7D7; }
+        .critico-label { font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; display: inline-block; text-transform: uppercase; }
+        .critico-nenhum { background: #EDF2F7; color: #718096; }
+        .critico-baixo { background: #F0FFF4; color: #2F855A; border: 1px solid #C6F6D5; }
+        .critico-medio { background: #FFFAF0; color: #C05621; border: 1px solid #FEEBC8; }
+        .critico-alto { background: #FFF5F5; color: #C53030; border: 1px solid #FED7D7; }
+        .select-risk-card { font-size: 0.65rem; padding: 2px 4px; border-radius: 4px; font-weight: 800; text-transform: uppercase; border: 1px solid transparent; cursor: pointer; outline: none; display: inline-block; text-align: center; }
+        .risk-bg-baixo { background: #F0FFF4; color: #2F855A; border-color: #C6F6D5; }
+        .risk-bg-medio { background: #FFFAF0; color: #C05621; border-color: #FEEBC8; }
+        .risk-bg-alto { background: #FFF5F5; color: #C53030; border-color: #FED7D7; }
+        .risk-bg-nenhum { background: #EDF2F7; color: #718096; }
+        .select-risk-modal { padding: 5px 10px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer; border: 1px solid transparent; }
+        .risk-baixo-sel { background: #F0FFF4; color: #2F855A; border-color: #C6F6D5; }
+        .risk-medio-sel { background: #FFFAF0; color: #C05621; border-color: #FEEBC8; }
+        .risk-alto-sel { background: #FFF5F5; color: #C53030; border-color: #FED7D7; }
+        .select-general-modal { padding: 5px 10px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-dark); }
+        .badge-reabertura { background-color: #FFF5F5; color: #C53030; border: 1px solid #FED7D7; font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px; width: fit-content; }
+        .btn-group-card { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+        .btn-card { padding: 6px 12px; border-radius: 6px; cursor: pointer; border: none; font-size: 0.8rem; font-weight: 600; color: white; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-card:hover { opacity: 0.9; }
+        .btn-details { background: var(--text-gray); }
+        .btn-assign { background: #3182CE; }
+        
+        /* Modal Adjustments */
+        .modal-box { padding: 40px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        .modal-header h3 { font-size: 1.3rem; font-weight: 700; margin: 0; color: var(--text-dark); }
+        .close-modal { font-size: 1.5rem; color: var(--text-gray); cursor: pointer; transition: 0.2s; }
+        .detail-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .detail-label { width: 140px; font-weight: 600; color: var(--text-gray); font-size: 0.9rem; flex-shrink: 0; }
+        .detail-value { flex: 1; color: var(--text-dark); font-weight: 500; font-size: 0.95rem; }
+        .form-section { margin-top: 20px; }
+        .form-section label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-dark); }
+        .form-section div, .form-section textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); color: var(--text-dark); font-size: 0.95rem; font-family: inherit; line-height: 1.5; }
+        
+        /* FOOTER DO MODAL (PADRONIZADO) */
+        .modal-footer { margin-top: 25px; display: flex; justify-content: flex-end; gap: 15px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .modal-footer:empty { display: none; /* Esconde o footer se não tiver botões */ }
+        .btn-edit { background: var(--secondary); color: #744210; }
+        .btn-delete { background: var(--primary); color: white; }
+        .btn-save { background: var(--primary); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease; width: auto; margin-top: 0; }
+        .btn-save:hover { background: #b91c1c; transform: translateY(-1px); }
+        .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-gray); padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-cancel:hover { background: rgba(0,0,0,0.05); color: var(--text-dark); }
+        .form-group { margin-bottom: 15px; } .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color:var(--text-dark) } .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); color: var(--text-dark); }
+        .btn-anexo { text-decoration: none; color: white; padding: 10px 15px; border-radius: 6px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: opacity 0.2s; border: none; cursor: pointer; }
+        .btn-anexo:hover { opacity: 0.9; transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+    <script>const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado")); if (!usuarioLogado) window.location.href = "login.html";</script>
+    
+    <div class="header-bar">
+        <div class="user-info" onclick="toggleProfileMenu(event)">
+            <img src="" class="avatar" id="userAvatar">
+            <div class="user-text">
+                <h3 style="margin:0; font-size:1.1rem" id="displayUser">Kanban</h3>
+                <p style="margin:0; font-size:0.85rem; color:var(--text-gray)" id="displayRole">Gerenciamento</p>
+            </div>
+            <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
+                <div class="profile-header"><strong id="menuUser">Usuário</strong><p id="menuRole">Cargo</p></div>
+                <a class="profile-menu-item" onclick="toggleProfileModal()"><i class="fa-regular fa-user"></i> Meu Perfil</a>
+                <div class="profile-menu-item logout" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</div>
+            </div>
+        </div>
+        <div class="header-icons">
+            <select id="filtroData" class="filter-select" onchange="renderizarKanban()">
+                <option value="hoje">Hoje</option><option value="7dias" selected>Últimos 7 Dias</option><option value="30dias">Últimos 30 Dias</option><option value="todos">Todos</option>
+            </select>
+            <div class="notification-wrapper" onclick="toggleNotificationMenu(event)">
+                <i class="fa-regular fa-bell notification-icon"></i><span class="notification-badge" id="notifBadge">0</span>
+                <div class="notification-dropdown" id="notifDropdown" onclick="event.stopPropagation()">
+                    <div class="notif-header">Notificações<button class="btn-mark-read" onclick="marcarTodasLidas()">Marcar lidas</button></div>
+                    <div class="notif-list" id="notifList"><div class="empty-notif">Carregando...</div></div>
+                </div>
+            </div>
+            <i class="fa-solid fa-house" onclick="window.location.href='index.html'" title="Home"></i>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="kanban-board">
+        <div class="column col-pendente"><div class="col-header">Pendente</div><div class="task-list" id="pendente" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+        <div class="column col-atribuido"><div class="col-header">Atribuído</div><div class="task-list" id="atribuido" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+        <div class="column col-andamento"><div class="col-header">Em Andamento</div><div class="task-list" id="andamento" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+        <div class="column col-concluido"><div class="col-header">Concluído</div><div class="task-list" id="concluido" ondrop="drop(event)" ondragover="allowDrop(event)"></div></div>
+    </div>
+
+    <div class="modal-overlay" id="modalDetalhes" style="z-index: 1000;">
+        <div class="modal-box" style="max-width: 600px;">
+            <div class="modal-header"><h3>Detalhes do Chamado</h3><span class="close-modal" onclick="fecharModal('modalDetalhes')">&times;</span></div>
+            <div id="conteudoDetalhes"></div>
+            <div class="modal-footer" id="botoesDetalhes"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalEditar" style="z-index: 1001;">
+        <div class="modal-box" style="max-width: 650px;">
+            <div class="modal-header"><h3>Editar Chamado</h3><span class="close-modal" onclick="fecharModal('modalEditar')">&times;</span></div>
+            <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <input type="hidden" id="editId">
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Título:</label><input type="text" id="editTitulo">
+                </div>
+                <div class="form-group">
+                    <label>Tipo:</label>
+                    <select id="editTipo">
+                        <option value="Incidente/Ocorrência">Incidente/Ocorrência</option>
+                        <option value="Tarefa/Solicitação">Tarefa/Solicitação</option>
+                        <option value="Dúvidas">Dúvidas</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Origem:</label>
+                    <select id="editOrigem">
+                        <option value="Sankhya">Sankhya</option>
+                        <option value="Computador">Computador</option>
+                        <option value="Impressora">Impressora</option>
+                        <option value="Microsoft 365">Microsoft 365</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Solicitante:</label><input type="text" id="editSolicitante">
+                </div>
+                <div class="form-group">
+                    <label>Setor (Automático):</label>
+                    <input type="text" id="editSetor" readonly style="background: #e5e7eb; cursor: not-allowed;" title="Setor não pode ser alterado manualmente.">
+                </div>
+                <div class="form-group">
+                    <label>Risco:</label>
+                    <select id="editRisco">
+                        <option value="Nenhum">Nenhum</option>
+                        <option value="Baixo">Baixo</option>
+                        <option value="Médio">Médio</option>
+                        <option value="Alto">Alto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Dev Responsável:</label>
+                    <select id="editDev"></select>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Causa:</label><textarea id="editCausa" rows="2"></textarea>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Descrição:</label><textarea id="editDesc" rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="grid-column: span 2;">
+                <button class="btn-cancel" onclick="fecharModal('modalEditar')">Cancelar</button>
+                <button class="btn-save" onclick="salvarEdicao()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Meu Perfil</h3><span class="close-modal" onclick="toggleProfileModal()">&times;</span></div>
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="photo-container"><img id="profilePreview" src="" alt="Foto"><label for="photoUpload" class="edit-photo-btn"><i class="fas fa-camera"></i></label><input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)"><input type="hidden" id="newPhotoBase64"></div>
+                    <p class="photo-hint">Clique na câmera para alterar</p>
+                </div>
+                <div class="profile-details-form">
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="profileName" readonly class="input-dark"></div>
+                    <div class="form-group"><label>E-mail</label><input type="email" id="profileEmail" readonly class="input-dark"></div>
+                    <div class="form-group"><label>Setor/Departamento</label><input type="text" id="profileDept" readonly class="input-dark"></div>
+                </div>
+                <div class="profile-settings"><div class="setting-item"><div class="setting-info"><span class="setting-title">Notificações</span><span class="setting-desc">Receber alertas e popups</span></div><label class="switch"><input type="checkbox" id="notifyToggle"><span class="slider round"></span></label></div></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveProfile()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalPreview" style="z-index: 9999;">
+        <div class="modal-box" style="width: 95%; height: 95%; max-width: none; padding: 0; display: flex; flex-direction: column;">
+            <div class="modal-header" style="padding: 15px 25px; margin-bottom: 0; border-bottom: 1px solid var(--border); position: relative;">
+                <h3 style="margin:0;">Visualizar Anexo</h3>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalPreview')" style="position: absolute; right: 25px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;"></i>
+            </div>
+            <div class="modal-body" id="previewContent" style="flex: 1; padding: 0; background: #2d3748; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+            </div>
+        </div>
+    </div>
+
+    <script src="global.js"></script>
+
+    <script>
+        const API_URL = "http://192.168.100.132:3000/api";
+        const SOCKET_URL = "http://192.168.100.132:3000";
+        
+        document.getElementById("displayUser").innerText = usuarioLogado.nome;
+        document.getElementById("displayRole").innerText = usuarioLogado.role;
+        document.getElementById("menuUser").innerText = usuarioLogado.nome; 
+        document.getElementById("menuRole").innerText = usuarioLogado.role; 
+        if(usuarioLogado.foto) document.getElementById('userAvatar').src = usuarioLogado.foto;
+
+        if (usuarioLogado.role !== 'Admin' && usuarioLogado.role !== 'Desenvolvedor') {
+            const sino = document.querySelector('.notification-wrapper');
+            if(sino) sino.style.display = 'none';
+        }
+
+        let todosChamados = []; 
+        const socket = io(SOCKET_URL);
+        socket.on('atualizar_kanban', () => { buscarDadosDaAPI(); });
+
+        if(usuarioLogado.role !== 'Admin' && usuarioLogado.role !== 'Desenvolvedor') { document.getElementById('filtroData').value = '30dias'; }
+
+        // ==============================================
+        // FECHAR MODAIS CLICANDO FORA DA JANELA
+        // ==============================================
+        window.addEventListener('click', function(event) {
+            const modais = ['modalDetalhes', 'modalEditar', 'profileModal', 'modalPreview'];
+            modais.forEach(id => {
+                const el = document.getElementById(id);
+                // Se o elemento clicado foi exatamente o fundo escuro (overlay)
+                if (event.target === el) {
+                    if(id === 'profileModal') toggleProfileModal();
+                    else fecharModal(id);
+                }
+            });
+        });
+
+        // ==============================================
+        // CARREGAR LISTA DE DESENVOLVEDORES (DINÂMICO)
+        // ==============================================
+        async function carregarListaDevs() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios`);
+                const usuarios = await res.json();
+                const tecnicos = usuarios.filter(u => u.role === 'Desenvolvedor' || u.role === 'Admin');
+                
+                const selectDev = document.getElementById('editDev');
+                if(!selectDev) return;
+                
+                selectDev.innerHTML = '<option value="">Sem atribuição</option>';
+                tecnicos.forEach(tec => {
+                    selectDev.innerHTML += `<option value="${tec.nome}">${tec.nome}</option>`;
+                });
+            } catch(e) {
+                console.error('Erro ao carregar devs', e);
+            }
+        }
+        carregarListaDevs(); // Chama no carregamento
+
+        async function buscarDadosDaAPI() {
+            try { const res = await fetch(`${API_URL}/chamados`); todosChamados = await res.json(); renderizarKanban(); } catch(e) { console.error("Erro API:", e); showToast("Erro ao carregar dados.", "error"); }
+        }
+
+        function renderizarKanban() {
+            try {
+                ['pendente', 'atribuido', 'andamento', 'concluido'].forEach(id => document.getElementById(id).innerHTML = "");
+                const filtro = document.getElementById('filtroData').value;
+                const hoje = new Date(); hoje.setHours(0,0,0,0);
+                const chamadosFiltrados = todosChamados.filter(c => {
+                    if (usuarioLogado.role !== 'Admin' && usuarioLogado.role !== 'Desenvolvedor') { if (c.criador_email !== usuarioLogado.email && c.solicitante_nome !== usuarioLogado.nome) { return false; } }
+                    if (filtro === 'todos') return true;
+                    if (!c.data_abertura) return false;
+                    const dataChamado = new Date(c.data_abertura); dataChamado.setHours(0,0,0,0);
+                    if (filtro === 'hoje') return dataChamado.getTime() === hoje.getTime();
+                    if (filtro === '7dias') { const d = new Date(hoje); d.setDate(hoje.getDate()-7); return dataChamado >= d; }
+                    if (filtro === '30dias') { const d = new Date(hoje); d.setDate(hoje.getDate()-30); return dataChamado >= d; }
+                    return true;
+                });
+                const podeEditar = usuarioLogado.role === 'Admin' || usuarioLogado.role === 'Desenvolvedor';
+                chamadosFiltrados.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'card'; card.draggable = true; card.ondragstart = (ev) => ev.dataTransfer.setData("text", c.id);
+                    let statusID = c.status ? c.status.toLowerCase() : 'pendente';
+                    if (!['pendente', 'atribuido', 'andamento', 'concluido'].includes(statusID)) statusID = 'pendente';
+                    let nivel = c.nivel || 'N1'; let risco = c.risco_critico || 'Baixo';
+                    let riscoClass = 'risk-bg-nenhum';
+                    if(risco === 'Baixo') riscoClass = 'risk-bg-baixo'; if(risco === 'Médio') riscoClass = 'risk-bg-medio'; if(risco === 'Alto') riscoClass = 'risk-bg-alto';
+                    let htmlRisco = '';
+                    if (podeEditar) {
+                        htmlRisco = `<select onchange="mudarRiscoCard(${c.id}, this.value)" class="select-risk-card ${riscoClass}" onclick="event.stopPropagation()"><option value="Nenhum" ${risco === 'Nenhum' ? 'selected' : ''}>Nenhum</option><option value="Baixo" ${risco === 'Baixo' ? 'selected' : ''}>Baixo</option><option value="Médio" ${risco === 'Médio' ? 'selected' : ''}>Médio</option><option value="Alto" ${risco === 'Alto' ? 'selected' : ''}>Alto</option></select>`;
+                    } else {
+                        let classeAntiga = risco === 'Alto' ? 'critico-alto' : (risco === 'Médio' ? 'critico-medio' : 'critico-baixo');
+                        htmlRisco = `<span class="critico-label ${classeAntiga}">${risco}</span>`;
+                    }
+                    let htmlSolicitante = c.solicitante_nome ? `<div style="font-size:0.75rem; color:var(--text-secondary); display:flex; align-items:center; gap:4px; font-weight:500"><i class="fa-regular fa-id-card"></i> ${c.solicitante_nome}</div>` : '';
+                    let htmlCausa = c.causa ? `<span style="background:var(--bg-body); color:var(--text-dark); padding:2px 6px; border-radius:4px; font-size:0.65rem; font-weight:700; border:1px solid var(--border-light);">${c.causa}</span>` : '';
+                    let devInfo = c.dev_responsavel ? `<div style="font-size:0.8rem; color:#2C5282; background:#EBF8FF; padding:4px 8px; border-radius:4px; margin-top:8px; display:inline-block; font-weight:600"><i class="fa-solid fa-user-gear"></i> ${c.dev_responsavel}</div>` : '';
+                    let tagClass = nivel === 'N3' ? 'tag-n3' : (nivel === 'N2' ? 'tag-n2' : 'tag-n1');
+                    let badgeReabertura = c.reaberturas > 0 ? `<div class="badge-reabertura"><i class="fa-solid fa-arrow-rotate-left"></i> Reaberto ${c.reaberturas}x</div>` : "";
+                    let btnAssumir = (usuarioLogado.role !== "User Comum" && statusID !== 'concluido') ? `<button class="btn-card btn-assign" onclick="assumir(${c.id})"><i class="fa-solid fa-user-tag"></i> Assumir</button>` : '';
+                    card.innerHTML = `${badgeReabertura}<div class="card-top"><span class="card-id">#${c.id}</span><span class="tag-nivel ${tagClass}">${nivel}</span></div><div class="card-title">${c.titulo}</div><div style="margin-bottom: 6px;">${htmlSolicitante}</div><div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 6px; text-transform:uppercase; font-weight:600">${c.tipo}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">${htmlRisco}${htmlCausa}</div>${devInfo}<div class="btn-group-card">${btnAssumir}<button class="btn-card btn-details" onclick="verDetalhes('${c.id}')">Detalhes</button></div>`;
+                    const coluna = document.getElementById(statusID);
+                    if(coluna) coluna.appendChild(card);
+                });
+            } catch(e) { console.error("Erro render:", e); }
+        }
+
+        async function mudarRiscoCard(id, novoRisco) {
+            try { await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ risco_critico: novoRisco }) }); showToast("Risco atualizado!", "info"); } catch (error) { console.error(error); }
+        }
+
+        // ==============================================
+        // ALTERAÇÃO RÁPIDA DE TIPO VIA DETALHES
+        // ==============================================
+        async function alterarTipoRapido(id, novoTipo) {
+            try {
+                await fetch(`${API_URL}/chamados/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo: novoTipo })
+                });
+                showToast('Tipo atualizado com sucesso!', 'success');
+            } catch(e) {
+                showToast('Erro ao atualizar o tipo', 'error');
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        document.querySelectorAll('.task-list').forEach(c => c.addEventListener('dragleave', () => c.classList.remove('drag-over')));
+        function drop(ev) { ev.preventDefault(); ev.currentTarget.classList.remove('drag-over'); const id = ev.dataTransfer.getData("text"); const novoStatus = ev.currentTarget.id; moverChamado(id, novoStatus); }
+        
+        function podeReabrir(chamado) {
+            if (!chamado.data_conclusao) return true; 
+            const dataConclusao = new Date(chamado.data_conclusao); const agora = new Date();
+            if (agora.getMonth() !== dataConclusao.getMonth() || agora.getFullYear() !== dataConclusao.getFullYear()) { showToast("Bloqueado: O mês virou.", "error"); return false; }
+            if (Math.ceil(Math.abs(agora - dataConclusao) / (1000 * 60 * 60 * 24)) > 7) { showToast("Bloqueado: Prazo de 7 dias expirou.", "error"); return false; }
+            return true;
+        }
+        
+        async function moverChamado(id, status) {
+            const c = todosChamados.find(x => x.id == id); const agora = new Date().getTime();
+            if (c.status === 'concluido' && status !== 'concluido') { if (!podeReabrir(c)) return; }
+            const payload = { status };
+            if (status === 'concluido' && c.status !== 'concluido') {
+                let inicioSessao = c.timer_inicio ? new Date(c.timer_inicio).getTime() : new Date(c.data_abertura).getTime();
+                payload.timer_acumulado = parseInt(c.timer_acumulado || 0) + (agora - inicioSessao > 0 ? agora - inicioSessao : 0);
+                payload.timer_inicio = null; payload.data_conclusao = new Date().toISOString();
+            } else if (c.status === 'concluido' && status !== 'concluido') {
+                payload.timer_inicio = new Date().toISOString(); payload.data_conclusao = null; payload.reaberturas = (c.reaberturas || 0) + 1;
+            }
+            if (status !== 'pendente') { if(!c.dev_responsavel) payload.dev_responsavel = usuarioLogado.nome; if(usuarioLogado.nivel_tec) payload.nivel = usuarioLogado.nivel_tec; } else { payload.dev_responsavel = null; }
+            try { await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); } catch(e) { showToast("Erro ao mover card.", "error"); }
+        }
+        
+        async function assumir(id) {
+            const payload = { dev_responsavel: usuarioLogado.nome, status: 'atribuido', nivel: usuarioLogado.nivel_tec || 'N1' };
+            await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            showToast("Chamado assumido!", "success");
+        }
+        
+        async function mudarRisco(id, val, elem) {
+            await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ risco_critico: val }) });
+            elem.className = 'select-risk-modal'; if(val === 'Baixo') elem.classList.add('risk-baixo-sel'); else if(val === 'Médio') elem.classList.add('risk-medio-sel'); else if(val === 'Alto') elem.classList.add('risk-alto-sel');
+            showToast("Risco alterado.", "info");
+        }
+        
+        async function mudarCausa(id, val) { await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ causa: val }) }); showToast("Causa raiz definida.", "info"); }
+        async function salvarSolucao(id, txt) { await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ solucao: txt }) }); }
+        
+        function formatarMs(ms) { if (ms < 0) ms = 0; const d = Math.floor(ms / 86400000); const h = Math.floor((ms % 86400000) / 3600000); const m = Math.floor((ms % 3600000) / 60000); return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m`; }
+        function calcularTempo(c) {
+            let totalMs = parseInt(c.timer_acumulado || 0);
+            if (c.status !== 'concluido' && (c.timer_inicio || c.data_abertura)) { totalMs += (new Date().getTime() - new Date(c.timer_inicio || c.data_abertura).getTime()); }
+            return formatarMs(totalMs);
+        }
+        
+        async function deletarChamado(id) { openConfirmModal("Deseja realmente excluir este chamado?", async () => { try { await fetch(`${API_URL}/chamados/${id}`, { method: 'DELETE' }); showToast("Chamado excluído.", "success"); fecharModal('modalDetalhes'); buscarDadosDaAPI(); } catch(e) { showToast("Erro ao excluir.", "error"); } }); }
+
+        function verDetalhes(id) {
+            const c = todosChamados.find(x => x.id == id);
+            if (!c) { console.error("Chamado não encontrado:", id); return; }
+
+            const isTech = usuarioLogado.role !== "User Comum";
+            const tempoTotal = calcularTempo(c);
+            let riscoAtual = c.risco_critico || 'Baixo';
+            let selectClass = riscoAtual === 'Médio' ? 'risk-medio-sel' : (riscoAtual === 'Alto' ? 'risk-alto-sel' : 'risk-baixo-sel');
+            let riscoHtml = isTech ? `<select onchange="mudarRisco(${c.id}, this.value, this)" class="select-risk-modal ${selectClass}"><option ${riscoAtual === 'Nenhum' ? 'selected' : ''}>Nenhum</option><option ${riscoAtual === 'Baixo' ? 'selected' : ''}>Baixo</option><option ${riscoAtual === 'Médio' ? 'selected' : ''}>Médio</option><option ${riscoAtual === 'Alto' ? 'selected' : ''}>Alto</option></select>` : `<span class="critico-label ${selectClass.replace('-sel','')}">${riscoAtual}</span>`;
+            let causaHtml = isTech ? `<select onchange="mudarCausa(${c.id}, this.value)" class="select-general-modal"><option value="" disabled ${!c.causa ? 'selected' : ''}>Selecione...</option><option value="Usuário" ${c.causa === 'Usuário' ? 'selected' : ''}>Usuário</option><option value="Software" ${c.causa === 'Software' ? 'selected' : ''}>Software</option><option value="Hardware" ${c.causa === 'Hardware' ? 'selected' : ''}>Hardware</option></select>` : `<span>${c.causa || 'Não classificado'}</span>`;
+            
+            let tipoHtml = isTech ? `
+                <select onchange="alterarTipoRapido(${c.id}, this.value)" class="select-general-modal" style="padding: 4px 8px;">
+                    <option value="Incidente/Ocorrência" ${c.tipo === 'Incidente/Ocorrência' ? 'selected' : ''}>Incidente/Ocorrência</option>
+                    <option value="Tarefa/Solicitação" ${c.tipo === 'Tarefa/Solicitação' ? 'selected' : ''}>Tarefa/Solicitação</option>
+                    <option value="Dúvidas" ${c.tipo === 'Dúvidas' ? 'selected' : ''}>Dúvidas</option>
+                    <option value="Outros" ${c.tipo === 'Outros' ? 'selected' : ''}>Outros</option>
+                </select>
+            ` : `<span class="detail-value" style="font-weight:700; color:var(--text-dark)">${c.tipo || 'N/A'}</span>`;
+
+            // Formatação de Datas
+            const formatarData = (dataStr) => {
+                if (!dataStr) return '-';
+                return new Date(dataStr).toLocaleString('pt-BR', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric', 
+                    hour: '2-digit', minute: '2-digit' 
+                });
+            };
+            const dataAberturaFmt = formatarData(c.data_abertura);
+            const dataEncerramentoFmt = formatarData(c.data_conclusao);
+
+            let anexoHtml = '';
+            if (c.anexo && c.anexo.length > 20) { 
+                anexoHtml = `<div class="form-section">
+                        <label>Anexos:</label>
+                        <div style="display:flex; gap:10px">
+                            <button onclick="abrirPreview('${c.id}')" class="btn-anexo" style="background:#2C5282;">
+                                <i class="fa-solid fa-eye"></i> Visualizar
+                            </button>
+                            <a href="${c.anexo}" download="anexo_${c.id}" class="btn-anexo" style="background:#38A169;">
+                                <i class="fa-solid fa-download"></i> Baixar Arquivo
+                            </a>
+                        </div>
+                    </div>`;
+            }
+
+            const html = `
+            <div class="detail-row"><span class="detail-label">ID:</span> <span class="detail-value">#${c.id}</span></div>
+            <div class="detail-row"><span class="detail-label">Título:</span> <span class="detail-value">${c.titulo}</span></div>
+            <div class="detail-row"><span class="detail-label">Tipo:</span> ${tipoHtml}</div>
+            <div class="detail-row"><span class="detail-label">Origem:</span> <span class="detail-value">${c.origem || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-label">Solicitante:</span> <span class="detail-value">${c.solicitante_nome || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-label">Setor do Solicitante:</span> <span class="detail-value">${c.setor || 'N/A'}</span></div>
+            <div class="detail-row"><span class="detail-label">Risco Crítico:</span> <span class="detail-value">${riscoHtml}</span></div>
+            <div class="detail-row"><span class="detail-label">Causa Raiz:</span> <span class="detail-value">${causaHtml}</span></div>
+            <div class="detail-row"><span class="detail-label">Nível (Escal.):</span> <span class="detail-value" style="font-weight:bold">${c.nivel || 'N1'}</span></div>
+            <div class="detail-row"><span class="detail-label">Status:</span> <span class="detail-value" style="text-transform:uppercase; font-weight:700">${c.status}</span></div>
+            <div class="detail-row"><span class="detail-label">Dev Responsável:</span> <span class="detail-value"><b>${c.dev_responsavel || 'Nenhum'}</b></span></div>
+            <div class="detail-row"><span class="detail-label">Data de Abertura:</span> <span class="detail-value">${dataAberturaFmt}</span></div>
+            <div class="detail-row"><span class="detail-label">Encerrado em:</span> <span class="detail-value">${c.status === 'concluido' ? dataEncerramentoFmt : '<i style="color:var(--text-gray); font-weight:400;">Em andamento...</i>'}</span></div>
+            <div class="detail-row"><span class="detail-label">Tempo Atend.:</span> <span class="detail-value" style="color:var(--accent-yellow); font-weight:700">${tempoTotal}</span></div>
+            ${c.reaberturas > 0 ? `<div style="color:#C53030; font-weight:700; margin-top:5px"><i class="fa-solid fa-triangle-exclamation"></i> Já foi reaberto ${c.reaberturas} vezes.</div>` : ''}
+            
+            <div class="form-section"><label>Descrição Completa:</label><div style="background:var(--bg-body); color:var(--text-dark); padding:10px; border-radius:8px; border:1px solid var(--border)">${c.descricao || ''}</div></div>
+            
+            ${anexoHtml}
+
+            <div class="form-section" style="margin-top:25px;">
+                <label style="color:#2F855A;"><i class="fa-solid fa-check-circle"></i> Solução / Resposta da TI:</label>
+                <textarea rows="3" onblur="salvarSolucao(${c.id}, this.value)" ${!isTech ? 'readonly' : ''} style="border-color:#C6F6D5; ${!isTech ? 'background:#F0FFF4; color:#22543D; font-weight:600;' : ''}">${c.solucao || ''}</textarea>
+            </div>
+            `; 
+            
+            document.getElementById('conteudoDetalhes').innerHTML = html;
+            const btns = document.getElementById('botoesDetalhes');
+            
+            // REMOVIDO: Botão de Fechar
+            btns.innerHTML = isTech ? `
+                <button class="btn-card btn-edit" onclick="abrirEdicao(${c.id})"><i class="fa-solid fa-pen"></i> Editar</button>
+                <button class="btn-card btn-delete" onclick="deletarChamado(${c.id})"><i class="fa-solid fa-trash"></i> Excluir</button>
+            ` : '';
+            
+            document.getElementById('modalDetalhes').style.display = 'flex';
+        }
+
+        function abrirPreview(id) {
+            const c = todosChamados.find(x => x.id == id);
+            if (!c || !c.anexo) { showToast("Anexo não encontrado.", "error"); return; }
+            const container = document.getElementById('previewContent');
+            container.innerHTML = ''; 
+            let conteudo = c.anexo.trim();
+            if (conteudo.startsWith('data:image') || conteudo.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                container.innerHTML = `<img src="${conteudo}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 5px 15px rgba(0,0,0,0.2);">`;
+            } else if (conteudo.startsWith('data:application/pdf') || conteudo.match(/\.pdf$/i)) {
+                container.innerHTML = `<iframe src="${conteudo}" style="width:100%; height:100%; border:none;"></iframe>`;
+            } else {
+                container.innerHTML = `<div style="text-align:center; color:#333"><h3>Formato não suportado para visualização.</h3><p>Por favor, utilize o botão "Baixar".</p></div>`;
+            }
+            document.getElementById('modalPreview').style.display = 'flex';
+        }
+
+        // ==============================================
+        // LÓGICA DE EDIÇÃO COMPLETA
+        // ==============================================
+        function abrirEdicao(id) {
+            fecharModal('modalDetalhes');
+            const c = todosChamados.find(x => x.id == id);
+            if(!c) return;
+
+            document.getElementById('editId').value = c.id; 
+            document.getElementById('editTitulo').value = c.titulo || ''; 
+            document.getElementById('editTipo').value = c.tipo || 'Outros';
+            document.getElementById('editOrigem').value = c.origem || 'Outros';
+            document.getElementById('editSolicitante').value = c.solicitante_nome || '';
+            document.getElementById('editSetor').value = c.setor || ''; // Setor é preenchido, mas é readonly
+            document.getElementById('editRisco').value = c.risco_critico || 'Baixo';
+            document.getElementById('editDev').value = c.dev_responsavel || '';
+            document.getElementById('editCausa').value = c.causa || ''; 
+            document.getElementById('editDesc').value = c.descricao || '';
+            
+            const isTech = (usuarioLogado.role === 'Admin' || usuarioLogado.role === 'Desenvolvedor');
+            document.getElementById('editRisco').disabled = !isTech; 
+            document.getElementById('editCausa').disabled = !isTech;
+            document.getElementById('editDev').disabled = !isTech;
+
+            document.getElementById('modalEditar').style.display = 'flex';
+        }
+
+        async function salvarEdicao() {
+            const id = document.getElementById('editId').value;
+            
+            const payload = { 
+                titulo: document.getElementById('editTitulo').value, 
+                tipo: document.getElementById('editTipo').value, 
+                origem: document.getElementById('editOrigem').value,
+                solicitante_nome: document.getElementById('editSolicitante').value,
+                risco_critico: document.getElementById('editRisco').value, 
+                causa: document.getElementById('editCausa').value, 
+                dev_responsavel: document.getElementById('editDev').value, 
+                descricao: document.getElementById('editDesc').value 
+                // Setor de propósito não enviamos, ele vem da criação
+            };
+            
+            try { 
+                await fetch(`${API_URL}/chamados/${id}`, { 
+                    method: 'PUT', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(payload) 
+                }); 
+                showToast("Alterações salvas com sucesso!", "success"); 
+                fecharModal('modalEditar'); 
+            } catch(e) { 
+                showToast("Erro ao salvar edição.", "error"); 
+            }
+        }
+        
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        function toggleProfileModal() { const m = document.getElementById('profileModal'); if (m.style.display === 'flex') { m.style.display = 'none'; } else { m.style.display = 'flex'; loadUserData(); const menu = document.getElementById('profileMenu'); if(menu) menu.classList.remove('active'); } }
+        function previewImage(e) { const r = new FileReader(); r.onload = function() { document.getElementById('profilePreview').src = r.result; document.getElementById('newPhotoBase64').value = r.result; }; if (e.target.files[0]) r.readAsDataURL(e.target.files[0]); }
+        function loadUserData() { const u = JSON.parse(sessionStorage.getItem("usuarioLogado")); if(!u) return; document.getElementById('profileName').value = u.nome; document.getElementById('profileEmail').value = u.email; document.getElementById('profileDept').value = u.setor || ''; document.getElementById('notifyToggle').checked = u.recebe_notificacao !== false; document.getElementById('profilePreview').src = u.foto || 'https://via.placeholder.com/150'; document.getElementById('newPhotoBase64').value = ""; }
+        async function saveProfile() { const u = JSON.parse(sessionStorage.getItem("usuarioLogado")); const np = document.getElementById('newPhotoBase64').value; const ns = document.getElementById('notifyToggle').checked; if(!u || !u.id) return; try { await fetch(`${API_URL}/usuarios/${u.id}/notificacoes`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recebe_notificacao: ns }) }); u.recebe_notificacao = ns; } catch(e) {} if (np) { try { const res = await fetch(`${API_URL}/usuarios/${u.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: u.nome, email: u.email, setor: u.setor, role: u.role, foto: np }) }); if(res.ok) { u.foto = np; document.getElementById('userAvatar').src = np; } } catch(e) {} } sessionStorage.setItem("usuarioLogado", JSON.stringify(u)); showToast("Perfil atualizado!", "success"); toggleProfileModal(); }
+
+        buscarDadosDaAPI();
+    </script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Usuários - Kari-Kari</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css"> 
+    
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* Estilos Específicos desta página */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-dark); padding: 20px; }
+        .app-container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* HEADER */
+        .header-bar { background: var(--bg-card); padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .user-info { display: flex; align-items: center; gap: 12px; cursor: pointer; position: relative; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+        
+        /* Container de ícones do Header */
+        .header-icons { display: flex; align-items: center; gap: 25px; }
+        .header-icons i.fa-house { font-size: 1.4rem; color: var(--text-gray); margin-left: 0; cursor: pointer; transition: 0.2s; }
+        .header-icons i.fa-house:hover { color: var(--primary); }
+
+        /* AREA DE CONTEUDO */
+        .content-area { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .actions-bar { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 15px; }
+        .search-input { flex: 1; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; outline: none; background: var(--bg-body); color: var(--text-dark); }
+        
+        .btn-new { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-new:hover { opacity: 0.9; }
+        
+        /* TABELA */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { text-align: left; padding: 12px; background: rgba(0,0,0,0.02); color: var(--text-gray); font-weight: 600; border-bottom: 1px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-dark); }
+        tr:hover td { background-color: rgba(0,0,0,0.02); }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .role-admin { background: #DBEAFE; color: #1E40AF; }
+        .role-user { background: #E5E7EB; color: #374151; }
+        .role-dev { background: #D1FAE5; color: #065F46; }
+        .level-badge { background: #FFF7ED; color: #9A3412; border: 1px solid #FFEDD5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        
+        .btn-icon { width: 32px; height: 32px; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; transition: 0.2s; }
+        .btn-edit { background: #EFF6FF; color: #3B82F6; }
+        .btn-edit:hover { background: #3B82F6; color: white; }
+        .btn-delete { background: #FEF2F2; color: #EF4444; }
+        .btn-delete:hover { background: #EF4444; color: white; }
+        
+        /* MODAL LOCAL (CRUD Usuários) */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); 
+            display: none; justify-content: center; align-items: center; 
+            z-index: 10000; 
+        }
+        
+        .modal-box { 
+            background: var(--bg-card); 
+            width: 550px; 
+            max-width: 95%; 
+            padding: 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+            color: var(--text-dark);
+            max-height: 90vh; 
+            overflow-y: auto;
+        }
+
+        .modal-box::-webkit-scrollbar { width: 6px; }
+        .modal-box::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.85rem; color: var(--text-dark); }
+        .form-group input:disabled, .form-group select:disabled { background-color: rgba(0,0,0,0.05); color: var(--text-gray); cursor: not-allowed; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; outline: none; background: var(--bg-body); color: var(--text-dark); }
+        
+        .modal-footer { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: transparent; border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: var(--text-gray); }
+        .btn-cancel:hover { background: rgba(0,0,0,0.05); color: var(--text-dark); }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header-bar">
+            <div class="user-info" onclick="toggleProfileMenu(event)">
+                <img src="" id="userAvatar" class="avatar">
+                <div><h4 id="userName" style="margin:0">...</h4><small id="userRole" style="color:var(--text-gray)">...</small></div>
+                
+                <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
+                    <div class="profile-header">
+                        <strong id="menuUser">Usuário</strong>
+                        <p id="menuRole">Cargo</p>
+                    </div>
+                    <a class="profile-menu-item" onclick="toggleProfileModal()">
+                        <i class="fa-regular fa-user"></i> Meu Perfil
+                    </a>
+                    <div class="profile-menu-item logout" onclick="fazerLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-icons">
+                <i class="fa-solid fa-house" onclick="window.location.href='index.html'" title="Home"></i>
+            </div>
+        </header>
+
+        <div class="toast-container" id="toastContainer"></div>
+
+        <main class="content-area">
+            <div class="actions-bar">
+                <input type="text" class="search-input" id="searchInput" placeholder="Buscar usuário por nome ou email..." onkeyup="renderizarTabela()">
+                <button class="btn-new" id="btnNovoUsuario" onclick="abrirModal()" style="display:none;">
+                    <i class="fa-solid fa-user-plus"></i> Novo Usuário
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table id="tabelaUsuarios">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Email</th>
+                            <th>Setor</th>
+                            <th>Cargo</th>
+                            <th>Nível</th>
+                            <th style="text-align:right" id="colAcoes">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaUsuariosBody"></tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modalUsuario">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle">Novo Usuário</h3>
+                <i class="fa-solid fa-times" style="cursor:pointer; font-size:1.2rem; color:var(--text-gray)" onclick="fecharModal()"></i>
+            </div>
+            <div class="form-grid">
+                <input type="hidden" id="userId"> 
+                <div class="form-group full-width"><label>Nome Completo</label><input type="text" id="inputNome"></div>
+                <div class="form-group full-width"><label>Email</label><input type="email" id="inputEmail"></div>
+                <div class="form-group"><label>Senha</label><input type="password" id="inputSenha" placeholder="Vazio para manter atual"></div>
+                <div class="form-group"><label>Setor</label>
+                    <select id="inputSetor">
+                        <option value="">Selecione...</option>
+                        <option>Diretoria</option>
+                        <option>Financeiro</option>
+                        <option>Jurídico</option>
+                        <option>Compras</option>
+                        <option>Comercial</option>
+                        <option>Marketing</option>
+                        <option>Produção</option>
+                        <option>Laboratório</option>
+                        <option>Qualidade</option>
+                        <option>Logística</option>
+                        <option>Estoque</option>
+                        <option>Estoque MP</option>
+                        <option>Segurança do Trabalho</option>
+                        <option>DP / RH</option>
+                        <option>TI</option>
+                        <option>Vendas</option>
+                        <option>Outros</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Cargo (Role)</label>
+                    <select id="inputRole">
+                        <option value="User Comum">User Comum</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Desenvolvedor">Desenvolvedor</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Nível Técnico</label>
+                    <select id="inputNivel">
+                        <option value="">N/A</option>
+                        <option value="N1">N1 (Básico)</option>
+                        <option value="N2">N2 (Intermed.)</option>
+                        <option value="N3">N3 (Avançado)</option>
+                    </select>
+                </div>
+                <div class="form-group full-width"><label>Foto de Perfil</label>
+                    <div style="display:flex; align-items:center; gap:15px; border:1px solid var(--border); padding:10px; border-radius:8px; background: var(--bg-body);">
+                        <img id="previewFoto" src="https://via.placeholder.com/60" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid var(--border)">
+                        <input type="file" id="inputFoto" accept="image/*" onchange="converterParaBase64(this)" style="border:none; padding:0; background: transparent;">
+                        <input type="hidden" id="fotoBase64"> 
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-save" onclick="salvarUsuario()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Meu Perfil</h3>
+                <span class="close-modal" onclick="toggleProfileModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="photo-container">
+                        <img id="profilePreview" src="" alt="Foto de Perfil">
+                        <label for="photoUpload" class="edit-photo-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
+                        <input type="hidden" id="newPhotoBase64">
+                    </div>
+                    <p class="photo-hint">Clique na câmera para alterar</p>
+                </div>
+
+                <div class="profile-details-form">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="profileName" readonly class="input-dark">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="profileEmail" readonly class="input-dark">
+                    </div>
+                    <div class="form-group">
+                        <label>Setor/Departamento</label>
+                        <input type="text" id="profileDept" readonly class="input-dark">
+                    </div>
+                </div>
+
+                <div class="profile-settings">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">Notificações</span>
+                            <span class="setting-desc">Receber alertas e popups</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="notifyToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveProfile()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="global.js"></script>
+
+<script>
+        // Define API_URL usando a global ou fallback local
+        const API_URL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : `http://192.168.100.132:3000/api`;
+        
+        const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+        if (!usuarioLogado) window.location.href = "login.html";
+        
+        // --- ATUALIZA HEADER ---
+        if(document.getElementById("userName")) document.getElementById("userName").innerText = usuarioLogado.nome;
+        if(document.getElementById("userRole")) document.getElementById("userRole").innerText = usuarioLogado.role;
+        if(document.getElementById("menuUser")) document.getElementById("menuUser").innerText = usuarioLogado.nome; 
+        if(document.getElementById("menuRole")) document.getElementById("menuRole").innerText = usuarioLogado.role;
+        if(usuarioLogado.foto && document.getElementById('userAvatar')) document.getElementById('userAvatar').src = usuarioLogado.foto;
+
+        function normalizeRole(role) { return (role || '').toString().trim().toLowerCase(); }
+
+        const myRole = normalizeRole(usuarioLogado.role);
+        const isAdmin = myRole === 'admin';
+        const isDev = myRole === 'desenvolvedor';
+
+        // Controle de visibilidade de botões
+        const btnNovo = document.getElementById('btnNovoUsuario');
+        if (btnNovo && isAdmin) btnNovo.style.display = 'flex';
+        
+        const colAcoes = document.getElementById('colAcoes');
+        if (colAcoes && !isAdmin && !isDev) colAcoes.style.display = 'none';
+
+        let usuariosDB = [];
+
+        async function carregarUsuarios() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios`);
+                usuariosDB = await res.json();
+                renderizarTabela();
+            } catch (err) { console.error(err); showToast("Erro ao carregar usuários.", "error"); }
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('listaUsuariosBody');
+            if(!tbody) return;
+            tbody.innerHTML = "";
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            const filtrados = usuariosDB.filter(u => (u.nome || '').toLowerCase().includes(termo) || (u.email || '').toLowerCase().includes(termo));
+
+            filtrados.forEach(u => {
+                const tr = document.createElement('tr');
+                const img = u.foto || 'https://via.placeholder.com/40';
+                const targetRole = normalizeRole(u.role);
+                
+                let roleClass = 'role-user';
+                if(targetRole === 'admin') roleClass = 'role-admin';
+                if(targetRole === 'desenvolvedor') roleClass = 'role-dev';
+
+                let botoesAcao = '';
+                if (isAdmin) {
+                    let btnDelete = '';
+                    if(u.id !== usuarioLogado.id) btnDelete = `<button class="btn-icon btn-delete" onclick="deletarUsuario(${u.id})" title="Excluir"><i class="fa-solid fa-trash"></i></button>`;
+                    botoesAcao = `<td style="text-align:right"><button class="btn-icon btn-edit" onclick="editarUsuario(${u.id})" title="Editar"><i class="fa-solid fa-pen"></i></button>${btnDelete}</td>`;
+                } else if (isDev) {
+                    if (u.id === usuarioLogado.id || targetRole === 'user comum') {
+                        botoesAcao = `<td style="text-align:right"><button class="btn-icon btn-edit" onclick="editarUsuario(${u.id})" title="Editar"><i class="fa-solid fa-pen"></i></button></td>`;
+                    } else botoesAcao = `<td></td>`;
+                } else botoesAcao = `<td style="display:none"></td>`;
+
+                tr.innerHTML = `<td><div style="display:flex; align-items:center; gap:10px"><img src="${img}" style="width:35px; height:35px; border-radius:50%; object-fit:cover"><span style="font-weight:600">${u.nome}</span></div></td><td>${u.email}</td><td>${u.setor || '-'}</td><td><span class="badge ${roleClass}">${u.role}</span></td><td>${u.nivel_tec ? `<span class="level-badge">${u.nivel_tec}</span>` : '-'}</td>${botoesAcao}`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function converterParaBase64(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewFoto').src = e.target.result; 
+                    document.getElementById('fotoBase64').value = e.target.result; 
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function abrirModal(editar = false) {
+            if (!editar && !isAdmin) { showToast("Acesso negado: Apenas Admin.", "error"); return; }
+            document.getElementById('modalUsuario').style.display = 'flex';
+            habilitarCampos(true); 
+            if(!editar) {
+                document.getElementById('modalTitle').innerText = "Novo Usuário";
+                document.getElementById('userId').value = ""; 
+                limparFormulario();
+            }
+        }
+
+        function editarUsuario(id) {
+            const u = usuariosDB.find(x => x.id === id);
+            if(!u) return;
+            const isSelf = (id === usuarioLogado.id);
+            const targetRole = normalizeRole(u.role);
+            const isTargetCommon = (targetRole === 'user comum');
+
+            if (!isAdmin && !isSelf && !(isDev && isTargetCommon)) { showToast("Permissão negada.", "error"); return; }
+
+            document.getElementById('modalTitle').innerText = "Editar Usuário";
+            document.getElementById('userId').value = u.id;
+            document.getElementById('inputNome').value = u.nome;
+            document.getElementById('inputEmail').value = u.email;
+            document.getElementById('inputSenha').value = ""; // Senha sempre vazia ao abrir
+            document.getElementById('inputSetor').value = u.setor || "TI";
+            
+            const roleSelect = document.getElementById('inputRole');
+            const roleOptions = Array.from(roleSelect.options).map(opt => opt.value);
+            const foundRole = roleOptions.find(r => r.toLowerCase() === targetRole) || 'User Comum';
+            roleSelect.value = foundRole;
+
+            document.getElementById('inputNivel').value = u.nivel_tec || "";
+            document.getElementById('previewFoto').src = u.foto || "https://via.placeholder.com/60";
+            document.getElementById('fotoBase64').value = u.foto || "";
+            document.getElementById('inputFoto').value = ""; 
+
+            habilitarCampos(true);
+            
+            if (isDev && !isAdmin) {
+                if (isSelf) {
+                    ['inputSetor','inputRole','inputNivel'].forEach(i => document.getElementById(i).disabled = true);
+                } else if (isTargetCommon) {
+                    document.getElementById('inputRole').disabled = true;
+                }
+            }
+            document.getElementById('modalUsuario').style.display = 'flex';
+        }
+
+        // --- FUNÇÃO SALVAR USUÁRIO (CRUD) ---
+        async function salvarUsuario() {
+            const id = document.getElementById('userId').value; 
+            let usuarioOriginal = null;
+
+            if (id) {
+                usuarioOriginal = usuariosDB.find(x => x.id == id);
+                const isSelf = (id == usuarioLogado.id);
+                const targetRole = normalizeRole(usuarioOriginal?.role);
+                
+                if (!isAdmin && !isSelf && !(isDev && targetRole === 'user comum')) { 
+                    showToast("Ação não permitida.", "error"); 
+                    return; 
+                }
+            } else if (!isAdmin) { 
+                showToast("Apenas Admin pode criar usuários.", "error"); 
+                return; 
+            }
+
+            const inputSenha = document.getElementById('inputSenha').value;
+            const nivelValor = document.getElementById('inputNivel').value;
+            const fotoValor = document.getElementById('fotoBase64').value;
+
+            const usuarioParaSalvar = {
+                id: id ? parseInt(id) : null,
+                nome: document.getElementById('inputNome').value,
+                email: document.getElementById('inputEmail').value,
+                setor: document.getElementById('inputSetor').value,
+                role: document.getElementById('inputRole').value,
+                nivel_tec: nivelValor === "" ? null : nivelValor,
+                foto: fotoValor
+            };
+
+            if (inputSenha && inputSenha.trim().length > 0) {
+                usuarioParaSalvar.senha = inputSenha;
+            } else {
+                if (id && usuarioOriginal) {
+                    usuarioParaSalvar.senha = usuarioOriginal.senha;
+                } else {
+                    showToast("Senha é obrigatória para novos usuários.", "info");
+                    return;
+                }
+            }
+
+            // Proteção contra auto-promoção de Devs
+            if (isDev && id && id == usuarioLogado.id) {
+                usuarioParaSalvar.setor = usuarioOriginal.setor;
+                usuarioParaSalvar.role = usuarioOriginal.role;
+                usuarioParaSalvar.nivel_tec = usuarioOriginal.nivel_tec;
+            }
+
+            if (!usuarioParaSalvar.nome.trim()) { showToast("Nome é obrigatório.", "info"); return; }
+
+            try {
+                let res;
+                if (id) {
+                    res = await fetch(`${API_URL}/usuarios/${id}`, { 
+                        method: 'PUT', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify(usuarioParaSalvar) 
+                    });
+                } else {
+                    res = await fetch(`${API_URL}/usuarios`, { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify(usuarioParaSalvar) 
+                    });
+                }
+
+                if (!res.ok) {
+                    const erroTexto = await res.text();
+                    throw new Error(erroTexto || "Erro na API");
+                }
+
+                showToast(id ? "Usuário atualizado!" : "Usuário criado!", "success");
+                
+                // Atualiza sessão se for o próprio usuário
+                if (id && id == usuarioLogado.id) {
+                    usuarioLogado.nome = usuarioParaSalvar.nome;
+                    usuarioLogado.foto = usuarioParaSalvar.foto;
+                    sessionStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
+                    
+                    if(document.getElementById("userName")) document.getElementById("userName").innerText = usuarioParaSalvar.nome;
+                    if(document.getElementById("menuUser")) document.getElementById("menuUser").innerText = usuarioParaSalvar.nome;
+                    if(usuarioParaSalvar.foto && document.getElementById('userAvatar')) document.getElementById('userAvatar').src = usuarioParaSalvar.foto;
+                }
+                
+                fecharModal();
+                carregarUsuarios();
+            } catch(e) { 
+                console.error(e); 
+                showToast("Erro ao salvar: " + e.message, "error"); 
+            }
+        }
+
+        async function deletarUsuario(id) {
+            if (!isAdmin) return; 
+            if (id == usuarioLogado.id) { showToast("Você não pode se excluir.", "error"); return; }
+            
+            openConfirmModal("Deseja realmente excluir este usuário?", async () => {
+                try {
+                    await fetch(`${API_URL}/usuarios/${id}`, { method: 'DELETE' });
+                    showToast("Usuário excluído.", "success");
+                    carregarUsuarios();
+                } catch(e) { showToast("Erro ao deletar.", "error"); }
+            });
+        }
+
+        function fecharModal() { document.getElementById('modalUsuario').style.display = 'none'; }
+        
+        function habilitarCampos(status) {
+            ['inputEmail','inputSenha','inputSetor','inputRole','inputNivel'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.disabled = !status;
+            });
+        }
+        
+        function limparFormulario() {
+            document.getElementById('inputNome').value = "";
+            document.getElementById('inputEmail').value = "";
+            document.getElementById('inputSenha').value = "";
+            document.getElementById('inputSetor').value = "";
+            document.getElementById('inputRole').value = "User Comum";
+            document.getElementById('inputNivel').value = "";
+            document.getElementById('previewFoto').src = "https://via.placeholder.com/60";
+            document.getElementById('fotoBase64').value = "";
+            document.getElementById('inputFoto').value = "";
+        }
+
+        // ============================================
+        // LÓGICA DO MODAL DE PERFIL PESSOAL
+        // ============================================
+
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                loadUserData(); // Carrega dados
+                const menu = document.getElementById('profileMenu');
+                if(menu) menu.classList.remove('active');
+            }
+        }
+
+        // Preview da Foto no Modal de Perfil Pessoal
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('profilePreview').src = reader.result;
+                document.getElementById('newPhotoBase64').value = reader.result;
+            }
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
+        function loadUserData() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            if(!user) return;
+
+            document.getElementById('profileName').value = user.nome;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileDept').value = user.setor || '';
+            
+            document.getElementById('notifyToggle').checked = user.recebe_notificacao !== false;
+
+            const img = document.getElementById('profilePreview');
+            img.src = user.foto || 'https://via.placeholder.com/150';
+            
+            document.getElementById('newPhotoBase64').value = "";
+        }
+
+        async function saveProfile() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            const newPhoto = document.getElementById('newPhotoBase64').value;
+            const notifyStatus = document.getElementById('notifyToggle').checked;
+            
+            if(!user || !user.id) return;
+
+            // 1. Atualizar Notificação
+            try {
+                await fetch(`${API_URL}/usuarios/${user.id}/notificacoes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recebe_notificacao: notifyStatus })
+                });
+                user.recebe_notificacao = notifyStatus;
+            } catch(e) { console.error(e); }
+
+            // 2. Atualizar Foto (Se houver)
+            if (newPhoto) {
+                try {
+                    const payload = {
+                        nome: user.nome, email: user.email, setor: user.setor, role: user.role, foto: newPhoto
+                    };
+                    const res = await fetch(`${API_URL}/usuarios/${user.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if(res.ok) {
+                        user.foto = newPhoto;
+                        document.getElementById('userAvatar').src = newPhoto;
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(user));
+            showToast("Perfil atualizado com sucesso!", "success");
+            toggleProfileModal();
+        }
+
+        carregarUsuarios();
+    </script>
+</body>
+</html>

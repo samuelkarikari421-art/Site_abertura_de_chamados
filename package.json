@@ -1,0 +1,51 @@
+{
+  "name": "karikari-helpdesk",
+  "version": "1.0.5",
+  "description": "Sistema de Gestão de Chamados TI",
+  "main": "main.js",
+  "author": "Kari-Kari TI",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.karikari.helpdesk",
+    "productName": "Kari-Kari TI",
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "http://192.168.100.132:3000/updates/"
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "frontend/Imagens/NovaLogo.png"
+    },
+    "files": [
+      "**/*",
+      "!dist/*",
+      "!backend/updates/*"
+    ],
+    "asar": true
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "electron-log": "^5.1.1",
+    "electron-updater": "^6.1.8",
+    "express": "^4.18.3",
+    "pg": "^8.11.3",
+    "qrcode-terminal": "^0.12.0",
+    "socket.io": "^4.7.4",
+    "whatsapp-web.js": "^1.34.6"
+  },
+  "devDependencies": {
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3"
+  }
+}

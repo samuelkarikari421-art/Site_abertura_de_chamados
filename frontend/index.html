@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Kari-Kari TI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        /* Estilos Específicos da Home */
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .app-container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 25px; }
+
+        /* HEADER */
+        .user-header {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .user-left { display: flex; align-items: center; gap: 15px; cursor: pointer; position: relative; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background-color: #EDF2F7; object-fit: cover; border: 2px solid var(--border); }
+        .user-info-text h2 { font-size: 1.1rem; color: var(--text-dark); font-weight: 700; margin-bottom: 2px; margin-top: 0; }
+        .user-info-text p { font-size: 0.9rem; color: var(--text-gray); font-weight: 500; margin: 0; }
+
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .header-icons { display: flex; align-items: center; gap: 20px; } 
+
+        .btn-logout-header {
+            color: var(--text-gray); font-size: 1.2rem; text-decoration: none; padding: 10px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; cursor: pointer;
+        }
+        .btn-logout-header:hover { background-color: #FFF5F5; color: #C42021; border-color: #FED7D7; }
+
+        /* MENU PRINCIPAL */
+        .main-content {
+            background-color: var(--bg-card);
+            border-radius: 16px;
+            padding: 50px;
+            min-height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            flex-wrap: wrap;
+            gap: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .center-logo { width: 100%; text-align: center; margin-bottom: 30px; }
+        .center-logo img { max-height: 80px; width: auto; }
+
+        .menu-btn {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px 30px;
+            width: 210px; height: 130px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            gap: 15px; text-decoration: none; color: var(--text-dark);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease; position: relative;
+        }
+
+        .menu-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: var(--primary); }
+        .menu-btn i { font-size: 2.5rem; color: var(--primary); transition: 0.3s; opacity: 0.9; }
+        .menu-btn:hover i { transform: scale(1.1); opacity: 1; }
+        .menu-btn span { font-weight: 600; font-size: 1rem; color: var(--text-dark); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="user-header">
+            <div class="user-left user-info" onclick="toggleProfileMenu(event)">
+                <img src="" alt="Foto" class="avatar" id="userAvatar">
+                <div class="user-info-text">
+                    <h2 id="userName">...</h2>
+                    <p id="userRole">...</p>
+                </div>
+
+                <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
+                    <div class="profile-header">
+                        <strong id="menuUser">Usuário</strong>
+                        <p id="menuRole">Cargo</p>
+                    </div>
+                    <a class="profile-menu-item" onclick="toggleProfileModal()">
+                        <i class="fa-regular fa-user"></i> Meu Perfil
+                    </a>
+                    <div class="profile-menu-item logout" onclick="fazerLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right header-icons">
+                <a href="#" class="btn-logout-header" onclick="fazerLogout()" title="Sair do Sistema">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="toast-container" id="toastContainer"></div>
+
+        <main class="main-content">
+            <div class="center-logo">
+                <img src="Imagens/logo.png" alt="Kari-Kari TI Logo" onerror="this.style.display='none'">
+            </div>
+            
+            <a href="chamados.html" class="menu-btn" id="btnChamado">
+                <i class="fa-solid fa-headset"></i>
+                <span>Novo Chamado</span>
+            </a>
+
+            <a href="kanban.html" class="menu-btn acesso-restrito" id="btnKanban">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>Kanban</span>
+            </a>
+            
+            <a href="dashboard.html" class="menu-btn acesso-restrito" id="btnDashboard">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="usuarios.html" class="menu-btn acesso-restrito" id="btnUsuarios">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Usuários</span>
+            </a>
+        </main>
+    </div>
+
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Meu Perfil</h3>
+                <span class="close-modal" onclick="toggleProfileModal()">&times;</span>
+            </div>
+            
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="photo-container">
+                        <img id="profilePreview" src="" alt="Foto de Perfil">
+                        <label for="photoUpload" class="edit-photo-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
+                        <input type="hidden" id="newPhotoBase64">
+                    </div>
+                    <p class="photo-hint">Clique na câmera para alterar</p>
+                </div>
+
+                <div class="profile-details-form">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="profileName" readonly class="input-dark">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="profileEmail" readonly class="input-dark">
+                    </div>
+                    <div class="form-group">
+                        <label>Setor/Departamento</label>
+                        <input type="text" id="profileDept" readonly class="input-dark">
+                    </div>
+                </div>
+
+                <div class="profile-settings">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">Notificações</span>
+                            <span class="setting-desc">Receber alertas e popups</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="notifyToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveProfile()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="global.js"></script>
+
+    <script>
+        // --- CONFIGURAÇÃO API ---
+        const API_URL = "http://192.168.100.132:3000/api";
+
+        // --- LÓGICA ESPECÍFICA DA HOME ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado")); 
+            
+            if (!usuarioLogado) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            // Preenche dados do Header
+            document.getElementById("userName").innerText = usuarioLogado.nome;
+            const role = usuarioLogado.role || "User Comum";
+            const setor = usuarioLogado.setor || "";
+            document.getElementById("userRole").innerText = `${role} ${setor ? '- ' + setor : ''}`;
+            
+            // Preenche menu flutuante
+            if(document.getElementById("menuUser")) {
+                document.getElementById("menuUser").innerText = usuarioLogado.nome;
+                document.getElementById("menuRole").innerText = role;
+            }
+
+            if(usuarioLogado.foto) {
+                document.getElementById('userAvatar').src = usuarioLogado.foto;
+            }
+            
+            // --- CONTROLE DE ACESSO ---
+            if (role === "User Comum") { 
+                const botoesRestritos = document.querySelectorAll('.acesso-restrito');
+                botoesRestritos.forEach(btn => {
+                    btn.classList.add('hidden');
+                });
+
+                // Oculta o sino na home se for user comum (redundância pois global.js também checa, mas visualmente melhor)
+                const style = document.createElement('style');
+                style.innerHTML = '.notification-wrapper { display: none !important; }';
+                document.head.appendChild(style);
+            }
+        });
+
+        // ============================================
+        // LÓGICA DO MODAL DE PERFIL
+        // ============================================
+
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                loadUserData(); // Carrega dados
+                // Fecha o dropdown se estiver aberto
+                const menu = document.getElementById('profileMenu');
+                if(menu) menu.classList.remove('active');
+            }
+        }
+
+        // Preview da Foto ao Selecionar
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('profilePreview').src = reader.result;
+                document.getElementById('newPhotoBase64').value = reader.result;
+            }
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
+        function loadUserData() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            if(!user) return;
+
+            document.getElementById('profileName').value = user.nome;
+            document.getElementById('profileEmail').value = user.email;
+            document.getElementById('profileDept').value = user.setor || '';
+            
+            // Lógica do Switch de Notificação (Default True se undefined)
+            document.getElementById('notifyToggle').checked = user.recebe_notificacao !== false;
+
+            // Foto
+            const img = document.getElementById('profilePreview');
+            img.src = user.foto || 'https://via.placeholder.com/150';
+            
+            // Limpa o input file hidden
+            document.getElementById('newPhotoBase64').value = "";
+        }
+
+        async function saveProfile() {
+            const user = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+            const newPhoto = document.getElementById('newPhotoBase64').value;
+            const notifyStatus = document.getElementById('notifyToggle').checked;
+            
+            if(!user || !user.id) return;
+
+            // 1. Atualizar Notificação (Rota Específica)
+            try {
+                await fetch(`${API_URL}/usuarios/${user.id}/notificacoes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recebe_notificacao: notifyStatus })
+                });
+                
+                user.recebe_notificacao = notifyStatus;
+
+            } catch(e) { console.error("Erro ao salvar notificação", e); }
+
+            // 2. Atualizar Foto (Rota Geral) - Apenas se houve mudança
+            if (newPhoto) {
+                try {
+                    const payload = {
+                        nome: user.nome, email: user.email, setor: user.setor, role: user.role, foto: newPhoto
+                    };
+
+                    const res = await fetch(`${API_URL}/usuarios/${user.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if(res.ok) {
+                        user.foto = newPhoto;
+                        document.getElementById('userAvatar').src = newPhoto;
+                    }
+                } catch(e) { console.error("Erro ao salvar foto", e); }
+            }
+
+            // Salva sessão atualizada
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(user));
+            
+            showToast("Perfil atualizado com sucesso!", "success");
+            toggleProfileModal();
+        }
+    </script>
+</body>
+</html>
