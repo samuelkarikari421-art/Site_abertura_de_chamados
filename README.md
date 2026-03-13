@@ -1,4 +1,4 @@
-# 🚀 Sistema de Chamados TI e Kanban (Kari-Kari)
+# 🚀 Sistema de Chamados TI (Kari-Kari)
 
 Um sistema completo de Help Desk e Service Desk construído do zero para gerenciar demandas de TI. Possui interface de usuário para abertura de tickets e um painel Kanban em tempo real para a equipe técnica.
 
