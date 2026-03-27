@@ -44,25 +44,60 @@
         .btn-action-icon:hover { background: #EDF2F7; color: var(--text-dark); }
         .prazo-expirado { color: #9CA3AF; font-size: 0.8rem; font-weight: 600; cursor: not-allowed; display: inline-flex; align-items: center; gap: 4px; padding: 8px; }
 
-        /* MODAL */
-        .modal-box { padding: 50px; }
-        .modal-header { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 20px; position: relative; }
-        .modal-header h3 { margin: 0; font-size: 1.4rem; font-weight: 700; text-align: center; }
-        .modal-header .close-modal, .modal-header i.fa-times { position: absolute; right: 0; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem; color: var(--text-gray); }
-        .detail-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f7f7f7; }
-        .detail-label { width: 170px; font-weight: 500; color: var(--text-gray); font-size: 0.95rem; flex-shrink: 0; }
-        .detail-value { color: var(--text-dark); font-weight: 600; font-size: 1rem; flex: 1; }
-        .description-box { background: var(--bg-body); padding: 20px; border: 1px solid var(--border); border-radius: 8px; line-height: 1.6; color: var(--text-dark); font-weight: 500; }
-        body.dark-mode .description-box { background: #374151; border-color: #4B5563; color: #F3F4F6; }
-        body.dark-mode .detail-value { color: #F9FAFB; }
-        body.dark-mode .detail-row { border-bottom-color: #374151; }
+        /* =============================================
+           MODAL (PADRÃO DE LINHAS CONTÍNUAS HORIZONTAIS)
+           ============================================= */
+        .modal-box { padding: 35px; border-radius: 12px; display: flex; flex-direction: column; background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 15px; border-bottom: 1px solid var(--border); flex-shrink: 0; position: relative;}
+        .modal-header h3 { font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--text-dark); }
+        .close-modal { font-size: 1.5rem; color: var(--text-gray); cursor: pointer; transition: 0.2s; position: absolute; right: 0; top: 50%; transform: translateY(-50%);}
+        .close-modal:hover { color: #C53030; }
+        
+        #conteudoDetalhes { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+
+        /* Info em Linhas - Flexbox Horizontal */
+        .info-row { display: flex; align-items: center; gap: 25px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .info-col { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .flex-1 { flex: 1; }
+        
+        .d-label { font-weight: 600; color: var(--text-gray); font-size: 0.9rem; width: 140px; flex-shrink: 0; }
+        .d-value { color: var(--text-dark); font-weight: 500; font-size: 0.95rem; word-break: break-word; }
+        
+        .form-section { margin-top: 15px; display: flex; flex-direction: column; }
+        .form-section label { display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-dark); }
+        .form-section div.desc-box, .form-section textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); color: var(--text-dark); font-size: 0.95rem; font-family: inherit; line-height: 1.5; min-height: 100px; resize: vertical;}
+
+        @media (max-width: 768px) { 
+            .info-row { flex-direction: column; align-items: flex-start; gap: 10px; padding: 15px 0; }
+            .info-col { width: 100%; }
+        }
+
+        /* OUTROS ESTILOS FORM & BOTOES */
         .form-group { margin-bottom: 15px; } 
         .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-gray); } 
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); outline: none; color: var(--text-dark); font-weight: 600; }
         .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); background: white; }
         body.dark-mode .form-group input, body.dark-mode .form-group select, body.dark-mode .form-group textarea { background-color: #374151; color: white; border-color: #4B5563; }
-        .btn-anexo { text-decoration: none; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: transform 0.2s; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-anexo { text-decoration: none; color: white; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; transition: transform 0.2s; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 10px; }
         .btn-anexo:hover { opacity: 0.9; transform: translateY(-1px); }
+        .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; gap: 15px; padding-top: 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-gray); padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-save { background: var(--primary); color: white; padding: 10px 24px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s ease; }
+
+        /* =============================================
+           ESTILOS DA DROPZONE (ARRASTAR E SOLTAR ANEXO)
+           ============================================= */
+        .drop-zone { border: 2px dashed var(--border); padding: 20px; text-align: center; border-radius: 8px; background: var(--bg-body); cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; margin-top: 5px; }
+        .drop-zone:hover, .drop-zone.drag-active { border-color: var(--primary); background: rgba(49, 130, 206, 0.05); }
+        .drop-zone input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .drop-zone-text { margin-top: 10px; font-size: 0.9rem; font-weight: 600; color: var(--text-dark); }
+        .drop-zone-icon { font-size: 2rem; color: var(--primary); }
+        .drop-zone-filename { margin-top: 5px; font-size: 0.85rem; color: #198754; font-weight: 700; word-break: break-all; }
+        
+        /* Layout Edição */
+        .form-row { display: flex; gap: 20px; width: 100%; margin-bottom: 15px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        @media (max-width: 768px) { .form-row { flex-direction: column; gap: 15px; } }
     </style>
 </head>
 <body>
@@ -104,17 +139,119 @@
     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Tema"><i class="fa-solid fa-moon"></i></button>
     
     <div class="modal-overlay" id="modalDetalhes">
-        <div class="modal-box">
+        <div class="modal-box" style="width: 90%; max-width: 1200px; max-height: 90vh;">
             <div class="modal-header">
-                <h3>Detalhes do Chamado</h3>
+                <h3 id="detalheHeaderTitulo">Detalhes do Chamado</h3>
                 <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalDetalhes')"></i>
             </div>
             <div id="conteudoDetalhes"></div>
+            <div class="modal-footer" id="botoesDetalhes"></div>
         </div>
     </div>
     
+    <div class="modal-overlay" id="modalEditar" style="z-index: 1001;">
+        <div class="modal-box" style="width: 90%; max-width: 1200px; max-height: 90vh;">
+            <div class="modal-header">
+                <h3>Editar Chamado</h3>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalEditar')"></i>
+            </div>
+            
+            <div class="modal-body" style="overflow-y: auto; padding-right: 5px;">
+                <input type="hidden" id="editId">
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex: 0 0 150px;">
+                        <label>ID do Chamado:</label><input type="text" id="editIdView" readonly style="background: var(--border-light); cursor: not-allowed; font-weight:bold;">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Título:</label><input type="text" id="editTitulo">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo:</label>
+                        <select id="editTipo">
+                            <option value="Incidente/Ocorrência">Incidente/Ocorrência</option>
+                            <option value="Tarefa/Solicitação">Tarefa/Solicitação</option>
+                            <option value="Dúvidas">Dúvidas</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Origem:</label>
+                        <select id="editOrigem">
+                            <option value="Sankhya">Sankhya</option>
+                            <option value="Computador">Computador</option>
+                            <option value="Impressora">Impressora</option>
+                            <option value="Microsoft 365">Microsoft 365</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Risco:</label>
+                        <select id="editRisco">
+                            <option value="Nenhum">Nenhum</option>
+                            <option value="Baixo">Baixo</option>
+                            <option value="Médio">Médio</option>
+                            <option value="Alto">Alto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Causa Raiz:</label>
+                        <select id="editCausa">
+                            <option value="">Selecione...</option>
+                            <option value="Usuário">Usuário</option>
+                            <option value="Software">Software</option>
+                            <option value="Hardware">Hardware</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Dev Responsável:</label>
+                        <select id="editDev"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nível (Automático):</label>
+                        <input type="text" id="editNivel" readonly style="background: var(--border-light); cursor: not-allowed; font-weight:bold;" title="Nível definido automaticamente">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status (Via Kanban):</label>
+                        <input type="text" id="editStatusView" readonly style="background: var(--border-light); cursor: not-allowed; text-transform:uppercase; font-weight:bold;">
+                    </div>
+                    <div class="form-group">
+                        <label>Solicitante:</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="editSolicitante" style="flex:1;">
+                            <input type="text" id="editSetor" readonly style="flex:1; background: var(--border-light); cursor: not-allowed;" placeholder="Setor">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="display:block;">
+                    <div class="form-group" style="width:100%;">
+                        <label>Descrição:</label><textarea id="editDesc" rows="5"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="fecharModal('modalEditar')">Cancelar</button>
+                <button class="btn-save" onclick="salvarEdicao()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalNovoChamado">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>Novo Chamado</h3>
                 <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalNovoChamado')"></i>
@@ -123,14 +260,18 @@
             <div class="form-group"><label>Origem:</label><select id="inputOrigem"><option>Computador</option><option>Impressora</option><option>Sankhya</option><option>Office 365</option><option>Outros</option></select></div>
             <div class="form-group"><label>Tipo:</label><select id="inputTipo"><option>Incidente/Ocorrência</option><option>Dúvidas</option><option>Tarefa/Solicitação</option></select></div>
             <div class="form-group"><label>Descrição Detalhada:</label><textarea id="inputDescricao" rows="4"></textarea></div>
+            
             <div class="form-group">
                 <label>Anexar Arquivo (Print/Doc):</label>
-                <div style="display:flex; align-items:center; gap:10px; border:1px solid var(--border); padding:10px; border-radius:8px; background:var(--bg-body)">
-                    <i class="fa-solid fa-cloud-arrow-up" style="color:var(--text-gray)"></i>
-                    <input type="file" id="inputAnexo" style="border:none; padding:0; background:transparent">
+                <div class="drop-zone" id="dropZoneAnexo">
+                    <i class="fa-solid fa-cloud-arrow-up drop-zone-icon"></i>
+                    <div class="drop-zone-text">Arraste o arquivo aqui ou clique para buscar</div>
+                    <div class="drop-zone-filename" id="nomeArquivoSelecionado"></div>
+                    <input type="file" id="inputAnexo">
                 </div>
                 <input type="hidden" id="anexoBase64">
             </div>
+
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="fecharModal('modalNovoChamado')">Cancelar</button> 
                 <button class="btn-save" onclick="salvarChamado()">Criar Chamado</button>
@@ -139,12 +280,20 @@
     </div>
 
     <div id="profileModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header"><h3>Meu Perfil</h3><span class="close-modal" onclick="toggleProfileModal()">&times;</span></div>
+        <div class="modal-box small" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Meu Perfil</h3>
+                <i class="fa-solid fa-times close-modal" onclick="toggleProfileModal()"></i>
+            </div>
             <div class="modal-body">
-                <div class="profile-photo-section">
-                    <div class="photo-container"><img id="profilePreview" src="" alt="Foto"><label for="photoUpload" class="edit-photo-btn"><i class="fas fa-camera"></i></label><input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)"><input type="hidden" id="newPhotoBase64"></div>
-                    <p class="photo-hint">Clique na câmera para alterar</p>
+                <div class="profile-photo-section" style="text-align: center; margin-bottom: 20px;">
+                    <div class="photo-container" style="position: relative; display: inline-block;">
+                        <img id="profilePreview" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);" src="" alt="Foto">
+                        <label for="photoUpload" style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="fas fa-camera"></i></label>
+                        <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
+                        <input type="hidden" id="newPhotoBase64">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 5px;">Clique na câmera para alterar</p>
                 </div>
                 <div class="profile-details-form">
                     <div class="form-group"><label>Nome Completo</label><input type="text" id="profileName" readonly class="input-dark"></div>
@@ -159,9 +308,9 @@
 
     <div class="modal-overlay" id="modalPreview">
         <div class="modal-box" style="width: 95%; height: 95%; max-width: none; padding: 0; display: flex; flex-direction: column;">
-            <div class="modal-header" style="padding: 15px 25px; margin-bottom: 0; border-bottom: 1px solid var(--border); position: relative;">
+            <div class="modal-header" style="padding: 15px 25px; margin-bottom: 0; border-bottom: 1px solid var(--border); position: relative; flex-shrink: 0;">
                 <h3 style="margin:0;">Visualizar Anexo</h3>
-                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalPreview')" style="position: absolute; right: 25px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.2rem;"></i>
+                <i class="fa-solid fa-times close-modal" onclick="fecharModal('modalPreview')"></i>
             </div>
             <div class="modal-body" id="previewContent" style="flex: 1; padding: 0; background: #2d3748; display: flex; justify-content: center; align-items: center; overflow: hidden;"></div>
         </div>
@@ -286,6 +435,31 @@
             }); 
         }
 
+        // ==============================================
+        // CARREGAR LISTA DE DESENVOLVEDORES
+        // ==============================================
+        async function carregarListaDevs() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios`);
+                const usuarios = await res.json();
+                const tecnicos = usuarios.filter(u => u.role === 'Desenvolvedor' || u.role === 'Admin');
+                
+                const selectDev = document.getElementById('editDev');
+                if(!selectDev) return;
+                
+                selectDev.innerHTML = '<option value="">Sem atribuição</option>';
+                tecnicos.forEach(tec => {
+                    selectDev.innerHTML += `<option value="${tec.nome}">${tec.nome}</option>`;
+                });
+            } catch(e) {
+                console.error('Erro ao carregar devs', e);
+            }
+        }
+        carregarListaDevs(); 
+
+        // ==============================================
+        // RENDERIZAÇÃO DO MODAL DE DETALHES (9 LINHAS PADRÃO)
+        // ==============================================
         function verDetalhes(id) {
             const c = chamadosDB.find(x => x.id === id);
             if(!c) return;
@@ -297,11 +471,8 @@
             }
             const h = Math.floor(totalMs / 3600000);
             const m = Math.floor((totalMs % 3600000) / 60000);
-            let tempo = `${h}h ${m}m`;
-            let tempoStyle = c.status === 'concluido' ? "color:#2D3748; font-weight:bold" : "color:#FFB300; font-weight:bold";
-            let reabertura = c.reaberturas > 0 ? `<div style="color:#C53030; font-weight:700; margin-bottom:15px; background:#FFF5F5; padding:8px; border-radius:6px; border:1px solid #FED7D7"><i class="fa-solid fa-triangle-exclamation"></i> Reaberto ${c.reaberturas} vezes.</div>` : '';
+            let tempoTotal = `${h}h ${m}m`;
 
-            // FORMATAÇÃO DE DATA/HORA
             const formatarData = (dataStr) => {
                 if (!dataStr) return '-';
                 return new Date(dataStr).toLocaleString('pt-BR', { 
@@ -312,78 +483,109 @@
             const dataAberturaFmt = formatarData(c.data_abertura);
             const dataEncerramentoFmt = formatarData(c.data_conclusao);
 
-            // BOTÕES DE ANEXO
             let anexoHtml = '';
-            if (c.anexo) {
+            if (c.anexo && c.anexo.length > 20) { 
                 anexoHtml = `
-                <div class="detail-row" style="border-top: 1px solid #f7f7f7; padding-top: 15px;">
-                    <span class="detail-label">Anexos:</span>
-                    <span class="detail-value" style="display:flex; gap:10px; align-items:center;">
-                        <button onclick="abrirPreview(${c.id})" class="btn-anexo" style="background:#2C5282;">
-                            <i class="fa-solid fa-eye"></i> Visualizar
-                        </button>
-                        <a href="${c.anexo}" download="anexo_${c.id}" class="btn-anexo" style="background:#38A169;">
-                            <i class="fa-solid fa-download"></i> Baixar Arquivo
-                        </a>
-                    </span>
-                </div>`;
-            } else {
-                anexoHtml = `
-                <div class="detail-row" style="border-top: 1px solid #f7f7f7; padding-top: 15px;">
-                    <span class="detail-label">Anexos:</span>
-                    <span style="color:var(--text-gray); font-style:italic; font-weight:400">Nenhum anexo</span>
-                </div>`;
+                    <div class="form-section" style="margin-top: 15px;">
+                        <label>Anexos Disponíveis:</label>
+                        <div style="display:flex; gap:10px">
+                            <button onclick="abrirPreview('${c.id}')" class="btn-anexo" style="background:#2C5282;">
+                                <i class="fa-solid fa-eye"></i> Visualizar Anexo
+                            </button>
+                            <a href="${c.anexo}" download="anexo_${c.id}" class="btn-anexo" style="background:#38A169;">
+                                <i class="fa-solid fa-download"></i> Baixar Arquivo
+                            </a>
+                        </div>
+                    </div>`;
             }
 
-            // CAIXA DE SOLUÇÃO (Aparece apenas se houver solução)
-            let solucaoHtml = '';
-            if (c.solucao && c.solucao.trim() !== '') {
-                solucaoHtml = `
-                <div class="form-group" style="margin-top:25px;">
-                    <label style="color:#2F855A; font-size:1rem;"><i class="fa-solid fa-check-circle"></i> Solução / Resposta da TI:</label>
-                    <div class="description-box" style="background:#F0FFF4; border-color:#C6F6D5; color:#22543D; font-weight: 600;">
-                        ${c.solucao}
+            document.getElementById('detalheHeaderTitulo').innerText = `Detalhes do Chamado`;
+
+            const isTech = usuarioLogado.role !== "User Comum";
+
+            const html = `
+                ${c.reaberturas > 0 ? `<div style="background:#FFF5F5; color:#C53030; padding:12px; border-radius:8px; font-weight:700; margin-bottom:20px; border: 1px solid #FED7D7;"><i class="fa-solid fa-triangle-exclamation"></i> Atenção: Este chamado já foi reaberto ${c.reaberturas} vez(es).</div>` : ''}
+                
+                <div class="info-row">
+                    <div class="info-col" style="flex: 0 0 auto; min-width: 150px; padding-right: 20px;">
+                        <span class="d-label" style="width: auto; min-width: 30px; margin-right: 5px;">ID:</span> 
+                        <span class="d-value" style="font-weight: 800; font-size: 1.1rem; white-space: nowrap; word-break: normal;">#${c.id}</span>
                     </div>
-                </div>`;
-            }
-
-            // HTML DO MODAL COMBINADO
-            const html = `${reabertura}
-                <div class="detail-row"><span class="detail-label">ID:</span><span class="detail-value">#${c.id}</span></div>
-                <div class="detail-row"><span class="detail-label">Título:</span><span class="detail-value" style="font-size: 1.1rem; color: #C42021;">${c.titulo}</span></div>
+                    <div class="info-col flex-1">
+                        <span class="d-label" style="width: 60px;">Título:</span> 
+                        <span class="d-value" style="font-weight: 700;">${c.titulo}</span>
+                    </div>
+                </div>
                 
-                <div class="detail-row"><span class="detail-label">Solicitante:</span><span class="detail-value">${c.solicitante_nome || c.criador_email}</span></div>
-                <div class="detail-row"><span class="detail-label">Setor do Solicitante:</span><span class="detail-value">${c.setor || 'Não informado'}</span></div>
+                <div class="info-row">
+                    <div class="info-col flex-1"><span class="d-label">Tipo:</span> <span class="d-value">${c.tipo || 'N/A'}</span></div>
+                    <div class="info-col flex-1"><span class="d-label">Origem:</span> <span class="d-value">${c.origem || 'N/A'}</span></div>
+                </div>
                 
-                <div class="detail-row"><span class="detail-label">Status:</span><span class="detail-value" style="text-transform:uppercase;">${c.status}</span></div>
-                <div class="detail-row"><span class="detail-label">Dev Responsável:</span><span class="detail-value">${c.dev_responsavel || 'Aguardando'}</span></div>
+                <div class="info-row">
+                    <div class="info-col flex-1"><span class="d-label">Risco Crítico:</span> <span class="d-value" style="font-weight: bold;">${c.risco_critico || 'Baixo'}</span></div>
+                    <div class="info-col flex-1"><span class="d-label">Causa Raiz:</span> <span class="d-value">${c.causa || 'Não classificado'}</span></div>
+                </div>
                 
-                <div class="detail-row"><span class="detail-label">Data de Abertura:</span><span class="detail-value">${dataAberturaFmt}</span></div>
-                <div class="detail-row"><span class="detail-label">Encerrado em:</span><span class="detail-value">${c.status === 'concluido' ? dataEncerramentoFmt : '<i style="color:var(--text-gray); font-weight:400;">Em andamento...</i>'}</span></div>
+                <div class="info-row">
+                    <div class="info-col flex-1"><span class="d-label">Dev Responsável:</span> <span class="d-value"><b>${c.dev_responsavel || 'Nenhum'}</b></span></div>
+                    <div class="info-col flex-1"><span class="d-label">Nível (Escal.):</span> <span class="d-value" style="font-weight:bold">${c.nivel || 'N1'}</span></div>
+                </div>
                 
-                <div class="detail-row"><span class="detail-label">Tempo Trabalhado:</span><span style="${tempoStyle}">${tempo}</span></div>
+                <div class="info-row">
+                    <div class="info-col flex-1"><span class="d-label">Status:</span> <span class="d-value" style="text-transform:uppercase; font-weight:700; color:var(--primary);">${c.status}</span></div>
+                    <div class="info-col flex-1"><span class="d-label">Solicitante:</span> <span class="d-value">${c.solicitante_nome || 'N/A'} ${c.setor ? `(${c.setor})` : ''}</span></div>
+                </div>
                 
-                <div class="form-group" style="margin-top:25px"><label>Descrição:</label><div class="description-box">${c.descricao}</div></div>
+                <div class="info-row">
+                    <div class="info-col flex-1"><span class="d-label" style="width: 70px;">Abertura:</span> <span class="d-value">${dataAberturaFmt}</span></div>
+                    <div class="info-col flex-1"><span class="d-label" style="width: 110px;">Encerramento:</span> <span class="d-value">${c.status === 'concluido' ? dataEncerramentoFmt : '<i style="color:var(--text-gray); font-style:italic;">Em andamento...</i>'}</span></div>
+                    <div class="info-col flex-1"><span class="d-label" style="width: 140px;">Tempo Atendimento:</span> <span class="d-value" style="color:#D69E2E; font-weight:700"><i class="fa-regular fa-clock"></i> ${tempoTotal}</span></div>
+                </div>
+                
+                <div class="form-section" style="margin-top: 15px;">
+                    <label>Descrição Completa:</label>
+                    <div class="desc-box" style="white-space: pre-wrap;">${c.descricao || 'Nenhuma descrição fornecida.'}</div>
+                </div>
+                
+                ${c.solucao || isTech ? `
+                <div class="form-section" style="margin-top: 15px;">
+                    <label style="color:#2F855A;"><i class="fa-solid fa-check-circle"></i> Solução / Resposta da TI:</label>
+                    ${isTech ? 
+                        `<textarea rows="3" onblur="salvarSolucao(${c.id}, this.value)" style="border-color:#C6F6D5;">${c.solucao || ''}</textarea>` : 
+                        `<div class="desc-box" style="background:#F0FFF4; border-color:#C6F6D5; color:#22543D; font-weight: 600; white-space: pre-wrap;">${c.solucao}</div>`
+                    }
+                </div>` : ''}
                 
                 ${anexoHtml}
-
-                ${solucaoHtml}`; 
+            `; 
             
             document.getElementById('conteudoDetalhes').innerHTML = html;
+            
+            const btns = document.getElementById('botoesDetalhes');
+            btns.innerHTML = isTech ? `
+                <button class="btn-new btn-edit" style="background:var(--secondary); color:#744210" onclick="abrirEdicao(${c.id})"><i class="fa-solid fa-pen"></i> Editar Info.</button>
+                <button class="btn-new btn-delete" style="background:var(--primary);" onclick="deletarChamado(${c.id})"><i class="fa-solid fa-trash"></i> Excluir</button>
+            ` : '';
+
             abrirModal('modalDetalhes');
         }
 
+        // CORREÇÃO DO BUG DO ANEXO (Garantindo que encontre o ID como string ou numero)
         function abrirPreview(id) {
-            const c = chamadosDB.find(x => x.id === id);
+            const c = chamadosDB.find(x => String(x.id) === String(id));
             if (!c || !c.anexo) { showToast("Anexo não encontrado.", "error"); return; }
+            
             const container = document.getElementById('previewContent');
             container.innerHTML = ''; 
-            if (c.anexo.startsWith('data:image')) {
-                container.innerHTML = `<img src="${c.anexo}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
-            } else if (c.anexo.startsWith('data:application/pdf')) {
-                container.innerHTML = `<iframe src="${c.anexo}" style="width:100%; height:100%; border:none;"></iframe>`;
+            
+            let conteudo = c.anexo.trim();
+            if (conteudo.startsWith('data:image') || conteudo.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                container.innerHTML = `<img src="${conteudo}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow:0 5px 15px rgba(0,0,0,0.2);">`;
+            } else if (conteudo.startsWith('data:application/pdf') || conteudo.match(/\.pdf$/i)) {
+                container.innerHTML = `<iframe src="${conteudo}" style="width:100%; height:100%; border:none;"></iframe>`;
             } else {
-                container.innerHTML = `<div style="text-align:center; color:#fff"><h3>Formato não suportado para visualização rápida.</h3><p>Por favor, utilize o botão "Baixar".</p></div>`;
+                container.innerHTML = `<div style="text-align:center; color:#fff"><h3>Formato não suportado para visualização rápida.</h3><p>Por favor, utilize o botão "Baixar Arquivo".</p></div>`;
             }
             abrirModal('modalPreview');
         }
@@ -418,6 +620,118 @@
             });
         }
 
+        async function salvarSolucao(id, txt) { await fetch(`${API_URL}/chamados/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ solucao: txt }) }); }
+        async function deletarChamado(id) { openConfirmModal("Deseja realmente excluir este chamado?", async () => { try { await fetch(`${API_URL}/chamados/${id}`, { method: 'DELETE' }); showToast("Chamado excluído.", "success"); fecharModal('modalDetalhes'); buscarDadosDaAPI(); } catch(e) { showToast("Erro ao excluir.", "error"); } }); }
+
+        // ==============================================
+        // LÓGICA DE EDIÇÃO COMPLETA
+        // ==============================================
+        function abrirEdicao(id) {
+            fecharModal('modalDetalhes');
+            const c = chamadosDB.find(x => x.id == id);
+            if(!c) return;
+
+            document.getElementById('editId').value = c.id; 
+            document.getElementById('editIdView').value = `#${c.id}`; 
+            
+            document.getElementById('editTitulo').value = c.titulo || ''; 
+            document.getElementById('editTipo').value = c.tipo || 'Outros';
+            document.getElementById('editOrigem').value = c.origem || 'Outros';
+            
+            document.getElementById('editRisco').value = c.risco_critico || 'Baixo';
+            document.getElementById('editCausa').value = c.causa || ''; 
+            
+            document.getElementById('editDev').value = c.dev_responsavel || '';
+            document.getElementById('editNivel').value = c.nivel || 'N1';
+            
+            document.getElementById('editStatusView').value = c.status || 'pendente';
+            
+            document.getElementById('editSolicitante').value = c.solicitante_nome || '';
+            document.getElementById('editSetor').value = c.setor || ''; 
+            
+            document.getElementById('editDesc').value = c.descricao || '';
+            
+            const isTech = (usuarioLogado.role === 'Admin' || usuarioLogado.role === 'Desenvolvedor');
+            document.getElementById('editRisco').disabled = !isTech; 
+            document.getElementById('editCausa').disabled = !isTech;
+            document.getElementById('editDev').disabled = !isTech;
+
+            document.getElementById('modalEditar').style.display = 'flex';
+        }
+
+        async function salvarEdicao() {
+            const id = document.getElementById('editId').value;
+            
+            const payload = { 
+                titulo: document.getElementById('editTitulo').value, 
+                tipo: document.getElementById('editTipo').value, 
+                origem: document.getElementById('editOrigem').value,
+                risco_critico: document.getElementById('editRisco').value, 
+                causa: document.getElementById('editCausa').value, 
+                dev_responsavel: document.getElementById('editDev').value, 
+                solicitante_nome: document.getElementById('editSolicitante').value,
+                descricao: document.getElementById('editDesc').value 
+            };
+            
+            try { 
+                await fetch(`${API_URL}/chamados/${id}`, { 
+                    method: 'PUT', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify(payload) 
+                }); 
+                showToast("Alterações salvas com sucesso!", "success"); 
+                fecharModal('modalEditar'); 
+            } catch(e) { 
+                showToast("Erro ao salvar edição.", "error"); 
+            }
+        }
+
+        // ==============================================
+        // LÓGICA DE DRAG & DROP DO NOVO ANEXO
+        // ==============================================
+        const dropZone = document.getElementById('dropZoneAnexo');
+        const inputAnexo = document.getElementById('inputAnexo');
+        const nomeArquivoSelecionado = document.getElementById('nomeArquivoSelecionado');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-active'), false);
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            if (files.length > 0) {
+                inputAnexo.files = files; // Passa o arquivo para o input nativo
+                processarArquivoAnexo(files[0]);
+            }
+        });
+
+        inputAnexo.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                processarArquivoAnexo(this.files[0]);
+            }
+        });
+
+        function processarArquivoAnexo(file) {
+            nomeArquivoSelecionado.innerHTML = `<i class="fa-solid fa-check"></i> Arquivo selecionado: ${file.name}`;
+            const reader = new FileReader();
+            reader.onload = function(e) { document.getElementById('anexoBase64').value = e.target.result; };
+            reader.readAsDataURL(file);
+        }
+
         async function salvarChamado() { 
             const titulo = document.getElementById('inputTitulo').value;
             const desc = document.getElementById('inputDescricao').value;
@@ -428,8 +742,7 @@
                 return; 
             }
 
-            // --- NOVA REGRA: Risco Automático para Incidentes ---
-            let riscoInicial = "Nenhum"; // Padrão para Dúvidas e Tarefas
+            let riscoInicial = "Nenhum"; 
             if (tipoSelecionado.includes('Incidente') || tipoSelecionado.includes('Ocorrência')) {
                 riscoInicial = "Baixo";
             }
@@ -442,7 +755,7 @@
                 setor: usuarioLogado.setor || "Geral", 
                 prioridade: 3, 
                 nivel: "N1", 
-                risco_critico: riscoInicial, // A mágica acontece aqui!
+                risco_critico: riscoInicial,
                 criador_email: usuarioLogado.email, 
                 solicitante_nome: usuarioLogado.nome, 
                 anexo: document.getElementById('anexoBase64').value,
@@ -462,10 +775,12 @@
                 
                 fecharModal('modalNovoChamado'); 
                 
+                // Limpar campos
                 document.getElementById('inputTitulo').value = ""; 
                 document.getElementById('inputDescricao').value = ""; 
                 document.getElementById('inputAnexo').value = ""; 
                 document.getElementById('anexoBase64').value = "";
+                document.getElementById('nomeArquivoSelecionado').innerHTML = "";
                 
                 if(typeof openSuccessModal === 'function') {
                     openSuccessModal(`Chamado #${dados.id} criado!`, () => carregarDados()); 
@@ -478,16 +793,8 @@
             }
         }
 
-        document.getElementById('inputAnexo').addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) { document.getElementById('anexoBase64').value = e.target.result; };
-                reader.readAsDataURL(this.files[0]);
-            }
-        });
-
         window.addEventListener('click', function(event) {
-            const modais = ['modalDetalhes', 'modalNovoChamado', 'profileModal', 'modalPreview'];
+            const modais = ['modalDetalhes', 'modalEditar', 'modalNovoChamado', 'profileModal', 'modalPreview'];
             modais.forEach(id => {
                 const el = document.getElementById(id);
                 if (event.target === el) {

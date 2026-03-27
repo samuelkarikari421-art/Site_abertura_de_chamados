@@ -30,7 +30,8 @@
 
         /* AREA DE CONTEUDO */
         .content-area { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        .actions-bar { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 15px; }
+        .actions-bar { display: flex; justify-content: space-between; margin-bottom: 20px; gap: 15px; flex-wrap: wrap; }
+        .search-wrapper { display: flex; gap: 15px; flex: 1; max-width: 800px; }
         .search-input { flex: 1; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; outline: none; background: var(--bg-body); color: var(--text-dark); }
         
         .btn-new { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
@@ -90,13 +91,39 @@
         .btn-cancel { background: transparent; border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: var(--text-gray); }
         .btn-cancel:hover { background: rgba(0,0,0,0.05); color: var(--text-dark); }
         .btn-save { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        /* Dropdown do Perfil (Copiado de gestão_projetos) */
+        .profile-popup { display: none; position: absolute; top: 65px; left: 0; background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-radius: 12px; width: 220px; z-index: 1000; flex-direction: column; overflow: hidden; }
+        .profile-popup.active { display: flex; animation: fadeIn 0.2s ease; }
+        .profile-header { padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-body); }
+        .profile-header strong { display: block; color: var(--text-dark); font-size: 0.95rem; }
+        .profile-header p { margin: 0; font-size: 0.8rem; color: var(--text-gray); }
+        .profile-menu-item { padding: 12px 15px; color: var(--text-dark); text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .profile-menu-item:hover { background: var(--bg-body); color: var(--primary); }
+        .profile-menu-item.logout { color: #dc3545; border-top: 1px solid var(--border); }
+        .profile-menu-item.logout:hover { background: #f8d7da; color: #b02a37;}
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Switch/Slider para Perfil */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; margin: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; margin: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .profile-photo-section { text-align: center; margin-bottom: 20px; }
+        .photo-container { position: relative; display: inline-block; }
+        .photo-container img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
+        .edit-photo-btn { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg-card); }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-body); border-radius: 8px; border: 1px solid var(--border); margin-top: 15px; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header class="header-bar">
             <div class="user-info" onclick="toggleProfileMenu(event)">
-                <img src="" id="userAvatar" class="avatar">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" id="userAvatar" class="avatar">
                 <div><h4 id="userName" style="margin:0">...</h4><small id="userRole" style="color:var(--text-gray)">...</small></div>
                 
                 <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
@@ -122,7 +149,31 @@
 
         <main class="content-area">
             <div class="actions-bar">
-                <input type="text" class="search-input" id="searchInput" placeholder="Buscar usuário por nome ou email..." onkeyup="renderizarTabela()">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar usuário por nome ou email..." onkeyup="renderizarTabela()">
+                    
+                    <select id="filtroSetor" class="search-input" style="flex: 0 0 250px; cursor: pointer;" onchange="renderizarTabela()">
+                        <option value="todos">Todos os Setores</option>
+                        <option value="Diretoria">Diretoria</option>
+                        <option value="Financeiro">Financeiro</option>
+                        <option value="Guarita">Guarita</option>
+                        <option value="Jurídico">Jurídico</option>
+                        <option value="Compras">Compras</option>
+                        <option value="Comercial">Comercial</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Produção">Produção</option>
+                        <option value="Laboratório">Laboratório</option>
+                        <option value="Qualidade">Qualidade</option>
+                        <option value="Logística">Logística</option>
+                        <option value="Estoque">Estoque</option>
+                        <option value="Estoque MP">Estoque MP</option>
+                        <option value="Segurança do Trabalho">Segurança do Trabalho</option>
+                        <option value="DP / RH">DP / RH</option>
+                        <option value="TI">TI</option>
+                        <option value="Vendas">Vendas</option>
+                    </select>
+                </div>
+                
                 <button class="btn-new" id="btnNovoUsuario" onclick="abrirModal()" style="display:none;">
                     <i class="fa-solid fa-user-plus"></i> Novo Usuário
                 </button>
@@ -162,6 +213,7 @@
                         <option value="">Selecione...</option>
                         <option>Diretoria</option>
                         <option>Financeiro</option>
+                        <option>Guarita</option>
                         <option>Jurídico</option>
                         <option>Compras</option>
                         <option>Comercial</option>
@@ -176,7 +228,6 @@
                         <option>DP / RH</option>
                         <option>TI</option>
                         <option>Vendas</option>
-                        <option>Outros</option>
                     </select>
                 </div>
                 <div class="form-group"><label>Cargo (Role)</label>
@@ -196,7 +247,7 @@
                 </div>
                 <div class="form-group full-width"><label>Foto de Perfil</label>
                     <div style="display:flex; align-items:center; gap:15px; border:1px solid var(--border); padding:10px; border-radius:8px; background: var(--bg-body);">
-                        <img id="previewFoto" src="https://via.placeholder.com/60" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid var(--border)">
+                        <img id="previewFoto" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:1px solid var(--border)">
                         <input type="file" id="inputFoto" accept="image/*" onchange="converterParaBase64(this)" style="border:none; padding:0; background: transparent;">
                         <input type="hidden" id="fotoBase64"> 
                     </div>
@@ -209,11 +260,11 @@
         </div>
     </div>
 
-    <div id="profileModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Meu Perfil</h3>
-                <span class="close-modal" onclick="toggleProfileModal()">&times;</span>
+    <div id="profileModal" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-box small" style="max-width: 450px; text-align: left;">
+            <div class="modal-header" style="margin-bottom: 20px;">
+                <h3 style="margin:0; color:var(--primary)">Meu Perfil</h3>
+                <i class="fa-solid fa-times" style="font-size: 1.5rem; cursor: pointer; color: var(--text-gray);" onclick="toggleProfileModal()"></i>
             </div>
             
             <div class="modal-body">
@@ -226,39 +277,37 @@
                         <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
                         <input type="hidden" id="newPhotoBase64">
                     </div>
-                    <p class="photo-hint">Clique na câmera para alterar</p>
+                    <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 5px; text-align: center;">Clique na câmera para alterar</p>
                 </div>
 
                 <div class="profile-details-form">
                     <div class="form-group">
                         <label>Nome Completo</label>
-                        <input type="text" id="profileName" readonly class="input-dark">
+                        <input type="text" id="profileName" readonly style="background: var(--bg-body);">
                     </div>
                     <div class="form-group">
                         <label>E-mail</label>
-                        <input type="email" id="profileEmail" readonly class="input-dark">
+                        <input type="email" id="profileEmail" readonly style="background: var(--bg-body);">
                     </div>
                     <div class="form-group">
                         <label>Setor/Departamento</label>
-                        <input type="text" id="profileDept" readonly class="input-dark">
+                        <input type="text" id="profileDept" readonly style="background: var(--bg-body);">
                     </div>
                 </div>
 
-                <div class="profile-settings">
-                    <div class="setting-item">
-                        <div class="setting-info">
-                            <span class="setting-title">Notificações</span>
-                            <span class="setting-desc">Receber alertas e popups</span>
-                        </div>
-                        <label class="switch">
-                            <input type="checkbox" id="notifyToggle">
-                            <span class="slider round"></span>
-                        </label>
+                <div class="setting-item">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 700; color: var(--text-dark);">Notificações</span>
+                        <span style="font-size: 0.8rem; color: var(--text-gray);">Receber alertas e popups</span>
                     </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notifyToggle">
+                        <span class="slider"></span>
+                    </label>
                 </div>
             </div>
 
-            <div class="modal-footer">
+            <div class="modal-footer" style="justify-content: flex-end;">
                 <button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button>
                 <button class="btn-save" onclick="saveProfile()">Salvar Alterações</button>
             </div>
@@ -267,8 +316,7 @@
 
     <script src="global.js"></script>
 
-<script>
-        // Define API_URL usando a global ou fallback local
+    <script>
         const API_URL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : `http://192.168.100.132:3000/api`;
         
         const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado"));
@@ -279,7 +327,9 @@
         if(document.getElementById("userRole")) document.getElementById("userRole").innerText = usuarioLogado.role;
         if(document.getElementById("menuUser")) document.getElementById("menuUser").innerText = usuarioLogado.nome; 
         if(document.getElementById("menuRole")) document.getElementById("menuRole").innerText = usuarioLogado.role;
-        if(usuarioLogado.foto && document.getElementById('userAvatar')) document.getElementById('userAvatar').src = usuarioLogado.foto;
+        
+        const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
+        if(document.getElementById('userAvatar')) document.getElementById('userAvatar').src = usuarioLogado.foto || defaultAvatar;
 
         function normalizeRole(role) { return (role || '').toString().trim().toLowerCase(); }
 
@@ -293,6 +343,19 @@
         
         const colAcoes = document.getElementById('colAcoes');
         if (colAcoes && !isAdmin && !isDev) colAcoes.style.display = 'none';
+
+        // Fechar dropdown de perfil clicando fora
+        window.addEventListener('click', function(event) {
+            const menu = document.getElementById('profileMenu');
+            if (menu && menu.classList.contains('active')) {
+                menu.classList.remove('active');
+            }
+        });
+
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            document.getElementById('profileMenu').classList.toggle('active');
+        }
 
         let usuariosDB = [];
 
@@ -308,12 +371,20 @@
             const tbody = document.getElementById('listaUsuariosBody');
             if(!tbody) return;
             tbody.innerHTML = "";
+            
             const termo = document.getElementById('searchInput').value.toLowerCase();
-            const filtrados = usuariosDB.filter(u => (u.nome || '').toLowerCase().includes(termo) || (u.email || '').toLowerCase().includes(termo));
+            const filtroSetor = document.getElementById('filtroSetor').value;
+
+            // Filtra por texto e pelo setor selecionado
+            const filtrados = usuariosDB.filter(u => {
+                const matchTexto = (u.nome || '').toLowerCase().includes(termo) || (u.email || '').toLowerCase().includes(termo);
+                const matchSetor = filtroSetor === 'todos' || (u.setor === filtroSetor);
+                return matchTexto && matchSetor;
+            });
 
             filtrados.forEach(u => {
                 const tr = document.createElement('tr');
-                const img = u.foto || 'https://via.placeholder.com/40';
+                const img = u.foto || defaultAvatar;
                 const targetRole = normalizeRole(u.role);
                 
                 let roleClass = 'role-user';
@@ -380,7 +451,7 @@
             roleSelect.value = foundRole;
 
             document.getElementById('inputNivel').value = u.nivel_tec || "";
-            document.getElementById('previewFoto').src = u.foto || "https://via.placeholder.com/60";
+            document.getElementById('previewFoto').src = u.foto || defaultAvatar;
             document.getElementById('fotoBase64').value = u.foto || "";
             document.getElementById('inputFoto').value = ""; 
 
@@ -520,7 +591,7 @@
             document.getElementById('inputSetor').value = "";
             document.getElementById('inputRole').value = "User Comum";
             document.getElementById('inputNivel').value = "";
-            document.getElementById('previewFoto').src = "https://via.placeholder.com/60";
+            document.getElementById('previewFoto').src = defaultAvatar;
             document.getElementById('fotoBase64').value = "";
             document.getElementById('inputFoto').value = "";
         }
@@ -564,7 +635,7 @@
             document.getElementById('notifyToggle').checked = user.recebe_notificacao !== false;
 
             const img = document.getElementById('profilePreview');
-            img.src = user.foto || 'https://via.placeholder.com/150';
+            img.src = user.foto || defaultAvatar;
             
             document.getElementById('newPhotoBase64').value = "";
         }
@@ -607,6 +678,11 @@
             sessionStorage.setItem("usuarioLogado", JSON.stringify(user));
             showToast("Perfil atualizado com sucesso!", "success");
             toggleProfileModal();
+        }
+
+        function fazerLogout() {
+            sessionStorage.removeItem("usuarioLogado");
+            window.location.href = "login.html";
         }
 
         carregarUsuarios();

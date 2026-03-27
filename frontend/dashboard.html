@@ -58,18 +58,52 @@
         .btn-outline:hover { background: var(--bg-body); }
         .btn-excel { background: #10B981; color: white; margin-left: auto; }
         .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Estilo do Perfil Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-box { background: var(--bg-card); width: 550px; max-width: 95%; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); color: var(--text-dark); max-height: 90vh; overflow-y: auto; }
+        .modal-box.small { max-width: 450px; padding: 25px; text-align: center; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .profile-popup { display: none; position: absolute; top: 65px; left: 0; background: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-radius: 12px; width: 220px; z-index: 1000; flex-direction: column; overflow: hidden; }
+        .profile-popup.active { display: flex; animation: fadeIn 0.2s ease; }
+        .profile-header { padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-body); }
+        .profile-header strong { display: block; color: var(--text-dark); font-size: 0.95rem; }
+        .profile-header p { margin: 0; font-size: 0.8rem; color: var(--text-gray); }
+        .profile-menu-item { padding: 12px 15px; color: var(--text-dark); text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .profile-menu-item:hover { background: var(--bg-body); color: var(--primary); }
+        .profile-menu-item.logout { color: #dc3545; border-top: 1px solid var(--border); }
+        .profile-menu-item.logout:hover { background: #f8d7da; color: #b02a37;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; margin: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; margin: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+        .profile-photo-section { text-align: center; margin-bottom: 20px; }
+        .photo-container { position: relative; display: inline-block; }
+        .photo-container img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
+        .edit-photo-btn { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg-card); }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-body); border-radius: 8px; border: 1px solid var(--border); margin-top: 15px; }
+        .form-group { margin-bottom: 15px; text-align: left;} 
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; color:var(--text-dark); font-size: 0.9rem; } 
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-body); color: var(--text-dark); font-family: inherit; font-size: 0.95rem; }
+        .modal-footer { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: transparent; border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: var(--text-gray); font-weight: 600;}
+        .btn-cancel:hover { background: rgba(0,0,0,0.05); color: var(--text-dark); }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <header class="header-bar">
             <div class="user-info" onclick="toggleProfileMenu(event)">
-                <img src="" id="userAvatar" class="avatar">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" id="userAvatar" class="avatar">
                 <div><h4 id="userName" style="margin:0; color:var(--text-dark)">...</h4><small id="userRole" style="color:var(--text-gray)">...</small></div>
                 <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
                     <div class="profile-header"><strong id="menuUser">Usuário</strong><p id="menuRole">Cargo</p></div>
-                    <a class="profile-menu-item" onclick="showToast('Em breve!', 'info')"><i class="fa-regular fa-user"></i> Meu Perfil</a>
-                    <div class="profile-menu-item logout" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair</div>
+                    <a class="profile-menu-item" onclick="toggleProfileModal()"><i class="fa-regular fa-user"></i> Meu Perfil</a>
+                    <div class="profile-menu-item logout" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</div>
                 </div>
             </div>
             <div class="header-icons">
@@ -91,6 +125,9 @@
             <div class="filter-group">
                 <label style="font-weight:600"><i class="fa-regular fa-calendar-days"></i> Mês:</label>
                 <input type="month" id="monthPicker" onchange="filtrarPorMesSelecionado()" title="Escolha um mês específico">
+                <button onclick="filtroRapido12Meses()" class="btn btn-outline" style="padding: 8px 12px; font-size: 0.85rem;" title="Ver últimos 12 meses">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 12 Meses
+                </button>
             </div>
 
             <div class="divider"></div>
@@ -101,10 +138,6 @@
                 <button onclick="aplicarFiltroManual()" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filtrar</button>
             </div>
 
-            <div class="divider"></div>
-
-            <button onclick="filtroMesAtual()" class="btn btn-outline" title="Filtrar mês corrente">📅 Mês Atual</button>
-            <button onclick="filtroRapido(365)" class="btn btn-outline" title="Últimos 365 dias">Último Ano</button>
             <button onclick="exportarExcel()" class="btn btn-excel" title="Baixar dados filtrados"><i class="fa-solid fa-file-excel"></i> Exportar Excel</button>
         </section>
 
@@ -178,27 +211,169 @@
         </div>
     </div>
 
+    <div id="profileModal" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal-box small" style="text-align: left;">
+            <div class="modal-header" style="margin-bottom: 20px;">
+                <h3 style="margin:0; color:var(--primary)">Meu Perfil</h3>
+                <i class="fa-solid fa-times" style="font-size: 1.5rem; cursor: pointer; color: var(--text-gray);" onclick="toggleProfileModal()"></i>
+            </div>
+            
+            <div class="modal-body">
+                <div class="profile-photo-section">
+                    <div class="photo-container">
+                        <img id="profilePreview" src="" alt="Foto de Perfil">
+                        <label for="photoUpload" class="edit-photo-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
+                        <input type="hidden" id="newPhotoBase64">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-gray); margin-top: 5px; text-align: center;">Clique na câmera para alterar</p>
+                </div>
+
+                <div class="profile-details-form">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="profileName" readonly style="background: var(--bg-body);">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="profileEmail" readonly style="background: var(--bg-body);">
+                    </div>
+                    <div class="form-group">
+                        <label>Setor/Departamento</label>
+                        <input type="text" id="profileDept" readonly style="background: var(--bg-body);">
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 700; color: var(--text-dark);">Notificações</span>
+                        <span style="font-size: 0.8rem; color: var(--text-gray);">Receber alertas e popups</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="notifyToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button class="btn-cancel" onclick="toggleProfileModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveProfile()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
     <script src="global.js"></script>
 
     <script>
         Chart.register(ChartDataLabels);
-        const API_URL = `http://192.168.100.132:3000/api`;
+        const API_URL = (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : `http://192.168.100.132:3000/api`;
+        const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
+        
         const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado"));
         if (!usuarioLogado) window.location.href = "login.html";
 
-        document.getElementById('userName').innerText = usuarioLogado.nome;
+        document.getElementById('userName').innerText = usuarioLogado.nome.split(' ')[0];
         document.getElementById('userRole').innerText = usuarioLogado.role;
         document.getElementById('menuUser').innerText = usuarioLogado.nome; 
         document.getElementById('menuRole').innerText = usuarioLogado.role;
-        if(usuarioLogado.foto) document.getElementById('userAvatar').src = usuarioLogado.foto;
+        document.getElementById('userAvatar').src = usuarioLogado.foto || defaultAvatar;
+
         if (usuarioLogado.role !== 'Admin' && usuarioLogado.role !== 'Desenvolvedor') {
             const sino = document.querySelector('.notification-wrapper');
             if(sino) sino.style.display = 'none';
         }
 
+        window.addEventListener('click', function(event) {
+            const menu = document.getElementById('profileMenu');
+            if (menu && menu.classList.contains('active')) {
+                menu.classList.remove('active');
+            }
+            if (event.target === document.getElementById('profileModal')) toggleProfileModal();
+        });
+
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            document.getElementById('profileMenu').classList.toggle('active');
+        }
+
+        function fazerLogout() {
+            sessionStorage.removeItem("usuarioLogado");
+            window.location.href = "login.html";
+        }
+
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                loadUserData(); 
+                const menu = document.getElementById('profileMenu');
+                if(menu) menu.classList.remove('active');
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('profilePreview').src = reader.result;
+                document.getElementById('newPhotoBase64').value = reader.result;
+            }
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
+        function loadUserData() {
+            if(!usuarioLogado) return;
+            document.getElementById('profileName').value = usuarioLogado.nome || '';
+            document.getElementById('profileEmail').value = usuarioLogado.email || '';
+            document.getElementById('profileDept').value = usuarioLogado.setor || '';
+            document.getElementById('notifyToggle').checked = usuarioLogado.recebe_notificacao !== false;
+            document.getElementById('profilePreview').src = usuarioLogado.foto || defaultAvatar;
+            document.getElementById('newPhotoBase64').value = "";
+        }
+
+        async function saveProfile() {
+            const newPhoto = document.getElementById('newPhotoBase64').value;
+            const notifyStatus = document.getElementById('notifyToggle').checked;
+            
+            if(!usuarioLogado || !usuarioLogado.id) return;
+
+            try {
+                await fetch(`${API_URL}/usuarios/${usuarioLogado.id}/notificacoes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recebe_notificacao: notifyStatus })
+                });
+                usuarioLogado.recebe_notificacao = notifyStatus;
+            } catch(e) { console.error("Erro notificação", e); }
+
+            if (newPhoto) {
+                try {
+                    const payload = { nome: usuarioLogado.nome, email: usuarioLogado.email, setor: usuarioLogado.setor, role: usuarioLogado.role, foto: newPhoto };
+                    const res = await fetch(`${API_URL}/usuarios/${usuarioLogado.id}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    });
+                    if(res.ok) {
+                        usuarioLogado.foto = newPhoto;
+                        document.getElementById('userAvatar').src = newPhoto;
+                    }
+                } catch(e) { console.error("Erro foto", e); }
+            }
+
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
+            showToast("Perfil atualizado!", "success");
+            toggleProfileModal();
+        }
+
         let allChamados = [];
         let chartInstances = {}; 
         const socket = io(`http://192.168.100.132:3000`);
+        
         socket.on('atualizar_kanban', () => {
             const dataInicio = document.getElementById('dateStart').valueAsDate;
             const dataFim = document.getElementById('dateEnd').valueAsDate;
@@ -209,7 +384,16 @@
             try { 
                 const res = await fetch(`${API_URL}/chamados`); 
                 allChamados = await res.json(); 
-                if(!document.getElementById('dateStart').value) filtroMesAtual();
+                
+                if(!document.getElementById('dateStart').value) {
+                    const hoje = new Date();
+                    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                    document.getElementById('dateStart').valueAsDate = inicio; 
+                    document.getElementById('dateEnd').valueAsDate = hoje;
+                    const mesFormatado = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+                    document.getElementById('monthPicker').value = mesFormatado;
+                    atualizarDashboard(inicio, hoje);
+                }
             } catch(e) { 
                 console.error("Erro API:", e); showToast("Erro ao carregar dados.", "error");
             }
@@ -233,31 +417,19 @@
             showToast(`Filtro aplicado: ${mesVal.replace('-', '/')}`, "success");
         }
 
-        function filtroMesAtual() {
-            const hoje = new Date();
-            const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-            document.getElementById('dateStart').valueAsDate = inicio; 
-            document.getElementById('dateEnd').valueAsDate = hoje;
-            
-            const mesFormatado = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
-            document.getElementById('monthPicker').value = mesFormatado;
-
-            atualizarDashboard(inicio, hoje);
-            showToast("Filtro aplicado: Mês Atual", "info");
-        }
-
-        function filtroRapido(dias) {
+        // Função readicionada para o botão "12 Meses" funcionar perfeitamente
+        function filtroRapido12Meses() {
             const hoje = new Date();
             let inicio = new Date();
-            if(dias === 365) inicio = new Date(hoje.getFullYear(), 0, 1);
-            else inicio.setDate(hoje.getDate() - dias);
+            inicio.setFullYear(hoje.getFullYear() - 1); // Volta exatamente 1 ano
             
             document.getElementById('dateStart').valueAsDate = inicio; 
             document.getElementById('dateEnd').valueAsDate = hoje;
-            document.getElementById('monthPicker').value = ""; 
+            document.getElementById('monthPicker').value = ""; // Limpa a bolinha do mês
 
-            atualizarDashboard(inicio, hoje);
-            showToast("Filtro aplicado: Último Ano", "info");
+            // Atualiza mandando o tempo até às 23:59:59 do dia de hoje
+            atualizarDashboard(inicio, new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59));
+            showToast("Filtro aplicado: Últimos 12 Meses", "info");
         }
 
         function aplicarFiltroManual() {
@@ -411,9 +583,6 @@
             renderMatrixTable(filtrados, labelsData);
         }
 
-        // ==========================================================
-        // ONDE A MÁGICA DO CÁLCULO HÍBRIDO ACONTECE
-        // ==========================================================
         function processarDadosPlanilha(dados, labelsData) {
             let metricas = { 
                 disponibilidade: [], mta: [], tmr: [], fcr: [], mtbf: [], taxaReabertura: [],
@@ -445,10 +614,9 @@
                 let tempoIndisponivelHoras = 0;
                 let tempoTotalAtendimentoHoras = 0;
 
-                // TMR - Calcula SOMENTE INCIDENTES (Usa LEAD TIME: Abertura até Conclusão)
                 incidentesReais.forEach(f => {
                     if(f.data_conclusao) {
-                        let inicioConta = new Date(f.data_abertura); // <--- REGRA AQUI
+                        let inicioConta = new Date(f.data_abertura); 
                         tempoIndisponivelHoras += calcularTempoUtilEmHoras(inicioConta, new Date(f.data_conclusao));
                     }
                 });
@@ -460,7 +628,6 @@
                     else if (risco === 'baixo') metricas.bugsBaixo[idx]++;
                 });
 
-                // MTA - Calcula TODOS os resolvidos (LÓGICA HÍBRIDA)
                 resolvidos.forEach(r => {
                     if(r.data_conclusao) {
                         let t = (r.tipo || '').toString().toLowerCase();
@@ -468,11 +635,8 @@
                         let inicioConta;
 
                         if (isIncidente) {
-                            // Se for Incidente, foca na dor do usuário (Abertura)
                             inicioConta = new Date(r.data_abertura);
                         } else {
-                            // Se for Tarefa/Dúvida, foca na equipe (Atendimento)
-                            // Fallback para abertura se o dev esqueceu de mudar o status corretamente
                             inicioConta = r.data_atendimento ? new Date(r.data_atendimento) : new Date(r.data_abertura);
                         }
                         

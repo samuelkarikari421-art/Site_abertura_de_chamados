@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Projetos - Kari-Kari TI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css"> 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* TRAVA GLOBAL DE LAYOUT */
+        * { box-sizing: border-box; }
+
+        /* BASE & PALETA DINÂMICA */
+        :root { --bg-project: #F5F6FA; --bg-card: #ffffff; --bg-column: #EDF2F7; --primary-blue: #0d6efd; --text-dark: #212529; --text-muted: #6c757d; --border-soft: #dee2e6; --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); --input-bg: #ffffff; }
+        body.dark-mode { --bg-project: #212529; --bg-card: #2c3034; --bg-column: #343a40; --text-dark: #f8f9fa; --text-muted: #adb5bd; --border-soft: #495057; --card-shadow: 0 4px 6px rgba(0,0,0,0.3); --input-bg: #212529; }
+        body { background-color: var(--bg-project); color: var(--text-dark); margin: 0; padding: 20px; font-family: 'Inter', sans-serif; transition: background-color 0.3s ease; }
+        .app-container { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* HEADER PADRÃO DO SISTEMA */
+        .user-header { background-color: var(--bg-card); border-radius: 12px; padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); transition: 0.3s; }
+        
+        .user-left { display: flex; align-items: center; gap: 15px; cursor: pointer; position: relative; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background-color: var(--bg-column); object-fit: cover; border: 2px solid var(--border-soft); transition: 0.2s; }
+        .user-left:hover .avatar { border-color: var(--primary); }
+        .user-info-text { display: flex; flex-direction: column; text-align: left; }
+        .user-info-text h2 { font-size: 1.1rem; color: var(--text-dark); font-weight: 700; margin-bottom: 2px; margin-top: 0; line-height: 1.2;}
+        .user-info-text p { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; margin: 0; }
+        
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .header-icons { display: flex; align-items: center; gap: 10px; }
+        
+        .btn-logout-header { color: var(--text-muted); font-size: 1.2rem; text-decoration: none; padding: 10px; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; cursor: pointer; position: relative; }
+        .btn-logout-header:hover { background-color: var(--bg-column); color: var(--primary); border-color: var(--border-soft); }
+        
+        .badge-notif { position: absolute; top: -5px; right: -5px; background-color: #dc3545; color: white; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 50%; border: 2px solid var(--bg-card); }
+        
+        /* Dropdown do Perfil */
+        .profile-popup { display: none; position: absolute; top: 65px; left: 0; background: var(--bg-card); border: 1px solid var(--border-soft); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border-radius: 12px; width: 220px; z-index: 1000; flex-direction: column; overflow: hidden; }
+        .profile-popup.active { display: flex; animation: fadeIn 0.2s ease; }
+        .profile-header { padding: 15px; border-bottom: 1px solid var(--border-soft); background: var(--bg-project); }
+        .profile-header strong { display: block; color: var(--text-dark); font-size: 0.95rem; }
+        .profile-header p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+        .profile-menu-item { padding: 12px 15px; color: var(--text-dark); text-decoration: none; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: 0.2s; }
+        .profile-menu-item:hover { background: var(--bg-column); color: var(--primary); }
+        .profile-menu-item.logout { color: #dc3545; border-top: 1px solid var(--border-soft); }
+        .profile-menu-item.logout:hover { background: #f8d7da; color: #b02a37;}
+        
+        @media (max-width: 768px) { .user-info-text { display: none; } }
+
+        /* CONTROLES E FERRAMENTAS */
+        .top-controls { background: var(--bg-card); padding: 20px 25px; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 15px; transition: 0.3s; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-soft); padding-bottom: 15px; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .filters-group { display: flex; gap: 10px; flex: 1; min-width: 300px; }
+        .filter-input { padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border-soft); background: var(--input-bg); color: var(--text-dark); font-weight: 500; outline: none; transition: border-color 0.3s ease; }
+        .filter-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(196, 32, 33, 0.25); }
+        .view-toggle { display: flex; background: var(--bg-column); padding: 4px; border-radius: 10px; border: 1px solid var(--border-soft); }
+        .btn-view { padding: 8px 16px; border: none; background: transparent; border-radius: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: background-color 0.3s ease, color 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .btn-view.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid var(--border-soft); }
+        .view-section { display: none; animation: fadeIn 0.4s ease; } .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* LISTA & KANBAN */
+        .list-container { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow); border: 1px solid var(--border-soft); overflow-x: auto; transition: 0.3s; }
+        table { width: 100%; border-collapse: collapse; } th { text-align: left; padding: 12px 15px; border-bottom: 2px solid var(--border-soft); color: var(--text-muted); font-size: 0.85rem; } td { padding: 15px; border-bottom: 1px solid var(--border-soft); font-weight: 500; } tr:hover { background-color: var(--bg-project); cursor: pointer; }
+        .kanban-board { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; align-items: flex-start; }
+        .k-column { background: var(--bg-column); min-width: 320px; width: 25%; border-radius: 12px; display: flex; flex-direction: column; max-height: 80vh; border: 1px solid var(--border-soft); transition: 0.3s; }
+        .k-header { padding: 15px; font-weight: 700; color: var(--text-dark); display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(0,0,0,0.05); }
+        .k-body { padding: 15px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; min-height: 150px; }
+        .p-card { background: var(--bg-card); padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); border: 1px solid var(--border-soft); cursor: grab; transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; position: relative;}
+        .p-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--primary); }
+        body.dark-mode .p-card { background: #374151; }
+        .prog-container { display: flex; align-items: center; gap: 10px; } .prog-bg { background: var(--border-soft); height: 8px; border-radius: 4px; flex: 1; } .prog-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        .k-counter-badge { background: var(--border-soft); color: var(--text-dark); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+
+        /* BADGES */
+        .status-badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; text-transform: uppercase;}
+        .badge-incompleto { background: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+        .badge-pronto { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .badge-semprazo { color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; gap: 5px; font-weight: 600; }
+        .badge-id { background: var(--primary); color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.9rem; font-weight: 800; display: inline-block; margin-left: 10px; }
+
+        /* MODAIS E ABAS */
+        .modal-box.large { position: relative; width: 90%; height: 90vh; max-width: none; padding: 0; overflow: hidden; display: flex; flex-direction: column; background-color: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-soft); }
+        .modal-box.small { max-width: 450px; padding: 25px; text-align: center; }
+        
+        .modal-header-tabs { padding: 20px 60px 0 30px; border-bottom: 2px solid var(--border-soft); display: flex; align-items: flex-end; background: var(--input-bg); flex-shrink: 0; }
+        .tabs-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 20px; border: none; background: transparent; font-weight: 700; font-size: 1rem; color: var(--text-muted); cursor: pointer; border-bottom: 3px solid transparent; transition: border-color 0.2s ease, color 0.2s ease; margin-bottom: -2px; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-btn:hover:not(.active) { color: var(--text-dark); }
+        .tab-content { display: none; padding: 30px 40px; overflow-y: auto; flex: 1; }
+        .tab-content.active { display: flex; flex-direction: column; }
+
+        /* FORMULÁRIO (TAB 1) */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; }
+        .full-width { grid-column: span 2; }
+        .section-title { grid-column: span 2; font-size: 0.95rem; font-weight: 800; color: var(--primary); text-transform: uppercase; border-bottom: 2px solid var(--border-soft); padding-bottom: 5px; margin-top: 15px; margin-bottom: 5px; }
+        .form-group label.main-label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: 8px; background: var(--input-bg); color: var(--text-dark); font-family: inherit; font-size: 0.95rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); background: var(--bg-card); box-shadow: 0 0 0 3px rgba(196, 32, 33, 0.15); }
+        .form-group input[readonly], .form-group select[readonly], .form-group textarea[readonly] { background: var(--bg-column); cursor: not-allowed; color: var(--text-muted); }
+        .form-group input[disabled], .form-group select[disabled], .form-group textarea[disabled] { background: var(--bg-column); cursor: not-allowed; opacity: 0.6; }
+        .input-error { border-color: #dc3545 !important; background: #f8d7da !important; box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25) !important; }
+        .input-group { display: flex; } .input-group input { border-radius: 8px 0 0 8px; border-right: none; } .input-group button { padding: 0 15px; border-radius: 0 8px 8px 0; border: 1px solid var(--border-soft); background: var(--border-soft); cursor: pointer; font-weight: 600; color: var(--text-dark); transition: background-color 0.2s ease; }
+        .priority-critica { color: #dc3545; font-weight: bold; }
+        .btn-criar { background: #198754; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: transform 0.2s ease, background-color 0.2s ease; }
+        .btn-criar:hover { background: #157347; transform: translateY(-1px); }
+        .btn-excluir-projeto { background: #dc3545; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: transform 0.2s ease, background-color 0.2s ease; }
+        .btn-excluir-projeto:hover { background: #b02a37; transform: translateY(-1px); }
+        .checkbox-label-inline { margin:0; font-size:0.85rem !important; display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted) !important; font-weight:500 !important; white-space: nowrap; }
+
+        /* WBS (TAB 2) - EAP EM COLUNAS */
+        .wbs-container { display: flex; flex-direction: column; gap: 20px; }
+        .wbs-etapas-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; align-items: flex-start; }
+        .etapa-card { background: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 12px; padding: 20px; min-width: 380px; flex: 1; flex-shrink: 0; }
+        .etapa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .etapa-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        
+        .eap-badge { background: var(--primary); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.9rem; font-weight: 800; font-family: monospace; display: inline-block; }
+        .atividade-eap-badge { background: var(--bg-column); color: var(--text-dark); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; margin-right: 8px; font-family: monospace; display: inline-block;}
+        body.dark-mode .atividade-eap-badge { background: #4A5568; color: #E2E8F0; }
+
+        .atividades-container { position: relative; padding-left: 20px; margin-top: 10px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; margin-left: 10px; }
+        .atividades-container::before { content: ""; position: absolute; left: 0; top: -10px; bottom: 20px; width: 2px; background: var(--border-soft); }
+        
+        .atividade-row-wrapper { position: relative; }
+        .atividade-row-wrapper::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; height: 2px; background: var(--border-soft); }
+        
+        .atividade-row { margin: 0; display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 12px 15px; border: 1px solid var(--border-soft); border-radius: 8px; transition: border-color 0.2s ease; }
+        .atividade-row:hover { border-color: var(--primary); }
+        
+        .atividade-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .atividade-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: #198754; flex-shrink: 0; }
+        .atividade-title { font-weight: 600; color: var(--text-dark); font-size: 0.95rem; }
+        .atividade-title.concluida { text-decoration: line-through; color: var(--text-muted); }
+        
+        .atividade-badges { display: flex; gap: 10px; align-items: center; }
+        .badge-user { font-size: 0.75rem; background: var(--bg-column); color: var(--text-muted); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+        body.dark-mode .badge-user { background: #4A5568; color: #E2E8F0; }
+        
+        .action-icon { cursor: pointer; color: var(--text-muted); transition: color 0.2s ease, background-color 0.2s ease; font-size: 1rem; display: inline-flex; align-items: center; justify-content: center; padding: 4px 6px; margin-left: 4px; border-radius: 6px; transform: translateZ(0); backface-visibility: hidden; }
+        .action-icon:hover { color: var(--primary); background-color: rgba(196, 32, 33, 0.1); }
+        .action-icon.trash:hover { color: #dc3545; background-color: rgba(220, 53, 69, 0.1); }
+        
+        .btn-add-etapa { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; align-self: flex-start; }
+        .btn-add-atividade { background: transparent; color: var(--primary); border: 2px dashed var(--primary); padding: 8px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; transition: background-color 0.2s ease; margin-top: 5px; transform: translateZ(0); backface-visibility: hidden; }
+        .btn-add-atividade:hover { background: rgba(196, 32, 33, 0.08); }
+
+        .lista-erros { text-align: left; background: #f8d7da; border: 1px solid #f5c2c7; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .lista-erros ul { margin: 0; padding-left: 20px; color: #842029; font-weight: 600; font-size: 0.9rem; } .lista-erros li { margin-bottom: 5px; }
+
+        /* Estilo do Perfil Modal */
+        .profile-photo-section { text-align: center; margin-bottom: 20px; }
+        .photo-container { position: relative; display: inline-block; }
+        .photo-container img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
+        .edit-photo-btn { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg-card); }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--bg-project); border-radius: 8px; margin-top: 15px; border: 1px solid var(--border-soft); }
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <header class="user-header">
+            
+            <div class="user-left user-info" onclick="toggleProfileMenu(event)">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" alt="Foto" class="avatar" id="userAvatar">
+                <div class="user-info-text">
+                    <h2 id="userName">Usuário</h2>
+                    <p id="userRole">Cargo</p>
+                </div>
+
+                <div class="profile-popup" id="profileMenu" onclick="event.stopPropagation()">
+                    <div class="profile-header">
+                        <strong id="menuUser">Usuário</strong>
+                        <p id="menuRole">Cargo</p>
+                    </div>
+                    <a class="profile-menu-item" onclick="toggleProfileModal()">
+                        <i class="fa-regular fa-user"></i> Meu Perfil
+                    </a>
+                    <div class="profile-menu-item logout" onclick="fazerLogout()">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right header-icons">
+                <a href="index.html" class="btn-logout-header" title="Voltar ao Início">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+            </div>
+        </header>
+
+        <div class="toast-container" id="toastContainer"></div>
+
+        <div class="top-controls">
+            <div class="top-header">
+                <h2 style="margin:0"><i class="fa-solid fa-folder-open" style="color:#ffc107"></i> Gestão de Projetos</h2>
+                <button onclick="abrirModalProjeto()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-rocket"></i> Novo Projeto</button>
+            </div>
+            
+            <div class="toolbar">
+                <div class="filters-group">
+                    <input type="text" id="searchProjeto" class="filter-input" placeholder="🔎 Buscar projeto..." style="flex: 2;" onkeyup="renderizarProjetos()">
+                    <select id="filterStatus" class="filter-input" style="flex: 1;" onchange="renderizarProjetos()">
+                        <option value="todos">Todos os Status</option>
+                        <option value="backlog">Backlog</option>
+                        <option value="andamento">Em Andamento</option>
+                        <option value="homologacao">Homologação</option>
+                        <option value="concluido">Concluído</option>
+                    </select>
+                    <select id="filterResp" class="filter-input" style="flex: 1;" onchange="renderizarProjetos()">
+                        <option value="todos">Todos os Devs</option>
+                    </select>
+                </div>
+
+                <div class="view-toggle">
+                    <button id="btnList" class="btn-view active" onclick="alterarView('list')"><i class="fa-solid fa-list"></i> Lista</button>
+                    <button id="btnKanban" class="btn-view" onclick="alterarView('kanban')"><i class="fa-solid fa-table-columns"></i> Kanban</button>
+                </div>
+            </div>
+        </div>
+
+        <section id="viewList" class="view-section active list-container">
+            <table>
+                <thead><tr><th>ID</th><th>Projeto</th><th>Status</th><th>Responsável</th><th>Prazo</th><th style="min-width: 150px;">Progresso</th></tr></thead>
+                <tbody id="tabelaProjetosBody"></tbody>
+            </table>
+        </section>
+
+        <section id="viewKanban" class="view-section">
+            <div class="kanban-board">
+                <div class="k-column"><div class="k-header"><span><i class="fa-solid fa-thumbtack" style="color:#dc3545"></i> BACKLOG</span> <span class="k-counter-badge" id="count-backlog">0</span></div><div class="k-body" id="col-backlog" ondrop="dropProjeto(event)" ondragover="allowDrop(event)"></div></div>
+                <div class="k-column"><div class="k-header"><span><i class="fa-solid fa-person-digging" style="color:#ffc107"></i> ANDAMENTO</span> <span class="k-counter-badge" id="count-andamento">0</span></div><div class="k-body" id="col-andamento" ondrop="dropProjeto(event)" ondragover="allowDrop(event)"></div></div>
+                <div class="k-column"><div class="k-header"><span><i class="fa-solid fa-vial" style="color:#0dcaf0"></i> HOMOLOGAÇÃO</span> <span class="k-counter-badge" id="count-homologacao">0</span></div><div class="k-body" id="col-homologacao" ondrop="dropProjeto(event)" ondragover="allowDrop(event)"></div></div>
+                <div class="k-column"><div class="k-header"><span><i class="fa-solid fa-check-double" style="color:#198754"></i> CONCLUÍDO</span> <span class="k-counter-badge" id="count-concluido">0</span></div><div class="k-body" id="col-concluido" ondrop="dropProjeto(event)" ondragover="allowDrop(event)"></div></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal-overlay" id="modalNovoProjeto" style="z-index: 2000;">
+        <div class="modal-box large">
+            
+            <i class="fa-solid fa-times close-modal" style="position: absolute; top: 25px; right: 25px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); z-index: 10; transition: color 0.2s ease;" onclick="fecharModal('modalNovoProjeto')"></i>
+
+            <div class="modal-header-tabs">
+                <div style="display:flex; align-items:center; gap:20px; flex-wrap: wrap;">
+                    <h3 style="font-size:1.4rem; margin:0; padding-bottom:12px; color:var(--text-dark); border-right:2px solid var(--border-soft); padding-right:20px; display:flex; align-items:center;">
+                        <span id="modalProjTitleText">Projeto</span>
+                        <span class="badge-id" id="headerProjId">Novo</span>
+                    </h3>
+                    <div class="tabs-container">
+                        <button class="tab-btn active" id="btnTab1" onclick="mudarAba(1)">📋 Detalhes do Projeto</button>
+                        <button class="tab-btn" id="btnTab2" onclick="mudarAba(2)"><i class="fa-solid fa-network-wired"></i> Plano de Execução (WBS)</button>
+                    </div>
+                </div>
+            </div>
+            
+            <input type="hidden" id="projIdEdicao"> 
+
+            <div class="tab-content active" id="tabContent1">
+                <div class="form-grid">
+                    <div class="section-title">🔗 Origem e Contexto</div>
+                    <div class="form-group full-width">
+                        <label class="main-label" style="display:flex; justify-content:space-between;">
+                            <span>Vincular a um Chamado (ID) - Preenche dados automaticamente</span>
+                            <span style="color:var(--primary); font-size:0.75rem; font-weight:bold;">Opcional</span>
+                        </label>
+                        <div class="input-group"><input type="number" id="projOrigemId" placeholder="Ex: 45"><button type="button" id="btnBuscarChamado" onclick="buscarChamadoVinculado()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button></div>
+                    </div>
+                    <div class="form-group"><label class="main-label">Solicitante</label><select id="projSolicitante" onchange="atualizarSetorSolicitante()"></select></div>
+                    <div class="form-group"><label class="main-label">Setor / Área (Automático)</label><input type="text" id="projSetor" readonly></div>
+
+                    <div class="section-title">🧱 Informações Básicas</div>
+                    <div class="form-group full-width"><label class="main-label">Título do Projeto <span style="color:red">*</span></label><input type="text" id="projTitulo"></div>
+                    <div class="form-group full-width"><label class="main-label">Descrição Detalhada <span style="color:red">*</span></label><textarea id="projDescricao" rows="4"></textarea></div>
+                    <div class="form-group"><label class="main-label">Tipo do Projeto</label><select id="projTipo"><option>Novo Desenvolvimento</option><option>Melhoria</option><option>Correção Estrutural</option><option>Integração</option></select></div>
+                    <div class="form-group"><label class="main-label">Impacto no Negócio</label><select id="projImpacto"><option>Baixo</option><option selected>Médio</option><option>Alto</option></select></div>
+
+                    <div class="section-title">📊 Planejamento e Prazos</div>
+                    <div class="form-group"><label class="main-label">Prioridade</label><select id="projPrioridade" onchange="verificarPrioridade()"><option>Baixa</option><option selected>Média</option><option>Alta</option><option class="priority-critica">Crítica</option></select></div>
+                    <div class="form-group"><label class="main-label">Responsável Líder (Dev) <span style="color:red">*</span></label><select id="projResp" onchange="verificarPermissaoStatus()"></select></div>
+                    <div class="form-group"><label class="main-label">Data de Início <span style="color:red">*</span></label><input type="date" id="projInicio"></div>
+                    <div class="form-group">
+                        <div style="display:flex; align-items:center; gap: 15px; margin-bottom: 6px;">
+                            <label class="main-label" style="margin-bottom: 0;">Data Limite (SLA) <span id="reqPrazo" style="color:red; display:none;">*</span></label>
+                            <label class="checkbox-label-inline"><input type="checkbox" id="projSemPrazo" onchange="toggleSemPrazo()"> Sem prazo</label>
+                        </div>
+                        <input type="date" id="projFim">
+                    </div>
+
+                    <div class="section-title">🛠️ Execução e Tecnologia</div>
+                    <div class="form-group"><label class="main-label">Validador / QA do Projeto</label><select id="projValidador"></select></div>
+                    <div class="form-group"><label class="main-label">Estimativa de Tempo <span style="color:red">*</span></label><input type="text" id="projEstimativa" placeholder="Ex: 40 horas"></div>
+                    <div class="form-group"><label class="main-label">Complexidade <span style="color:red">*</span></label><select id="projComplexidade"><option value="">Selecione...</option><option>Baixa</option><option>Média</option><option>Alta</option></select></div>
+                    <div class="form-group full-width">
+                        <label class="main-label">Tecnologias Envolvidas</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="projTechSelect" onchange="verificarTecnologiaOutro()" style="flex: 1;"><option value="Sankhya">Sankhya</option><option value="Microsoft 365">Microsoft 365</option><option value="Câmeras">Câmeras</option><option value="Desenvolvimento de aplicações">Desenvolvimento de aplicações</option><option value="Outro">Outro (Digitar manualmente)</option></select>
+                            <input type="text" id="projTechManual" placeholder="Digite a tecnologia..." style="flex: 1; display: none;">
+                        </div>
+                    </div>
+
+                    <div class="section-title">📈 Controle</div>
+                    <div class="form-group">
+                        <label class="main-label">Status Atual</label>
+                        <select id="projStatus" disabled onchange="mudarStatusDireto()">
+                            <option value="backlog" selected>Backlog (Fila)</option>
+                            <option value="andamento">Em Andamento</option>
+                            <option value="homologacao">Homologação</option>
+                            <option value="concluido">Concluído</option>
+                        </select>
+                        <small id="avisoStatus" style="display:none; color:#dc3545; font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-lock"></i> Apenas o Responsável pode alterar.</small>
+                    </div>
+                    <div class="form-group full-width"><label class="main-label">Observações / Checklist</label><textarea id="projObs" rows="2"></textarea></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tabContent2" style="background: var(--bg-project);">
+                <div id="avisoWbsNovo" style="display:none; text-align:center; padding: 40px; color: var(--text-muted);">
+                    <i class="fa-solid fa-save" style="font-size: 3rem; margin-bottom: 15px; color: var(--border-soft);"></i>
+                    <h3>Salve o projeto primeiro!</h3>
+                    <p>Você precisa salvar as informações básicas na aba "Detalhes" antes de criar as etapas de execução.</p>
+                </div>
+
+                <div id="wbsApp" class="wbs-container">
+                    <div style="background:var(--bg-card); padding:20px; border-radius:12px; border:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h2 style="margin:0; color:var(--text-dark); font-size:1.2rem;">Progresso Geral do Projeto</h2>
+                            <span style="color:var(--text-muted); font-size:0.85rem;" id="wbsStats">0 de 0 atividades concluídas</span>
+                        </div>
+                        <div style="width: 40%;">
+                            <div class="prog-container"><div class="prog-bg" style="height:12px;"><div class="prog-fill" id="wbsMainBar" style="width:0%; background:var(--primary)"></div></div><span style="font-size:1rem; font-weight:800;" id="wbsMainText">0%</span></div>
+                        </div>
+                    </div>
+                    
+                    <div id="wbsEtapasLista" class="wbs-etapas-row"></div>
+                    
+                    <button id="btnAddEtapaPrincipal" class="btn-add-etapa" onclick="criarNovaEtapa()"><i class="fa-solid fa-plus"></i> Adicionar Nova Etapa</button>
+                </div>
+            </div>
+
+            <div style="padding: 20px 40px; border-top: 1px solid var(--border-soft); background: var(--bg-card); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;">
+                <div>
+                    <button id="btnExcluirProj" class="btn-excluir-projeto" style="display:none;" onclick="excluirProjetoDefinitivo()"><i class="fa-solid fa-trash"></i> Excluir Projeto</button>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <button class="btn-cancel" style="background:transparent; border:1px solid var(--border-soft); color:var(--text-muted); padding:12px 24px; border-radius:8px; font-weight:600; cursor:pointer;" onclick="fecharModal('modalNovoProjeto')">Fechar</button>
+                    <button id="btnHabilitarEdicao" style="background:#ffc107; color:#212529; padding:12px 24px; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; transition:0.2s;" onclick="habilitarEdicaoProjeto()"><i class="fa-solid fa-pen"></i> Habilitar Edição</button>
+                    <button class="btn-criar" id="btnSalvarProj" onclick="salvarProjeto()">Salvar Dados 🚀</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal-overlay" style="z-index: 4000;">
+        <div class="modal-box small" style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-soft); border-radius: 12px; text-align:left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin:0; color:var(--primary)">Meu Perfil</h3>
+                <i class="fa-solid fa-times" style="font-size: 1.5rem; cursor: pointer; color: var(--text-muted);" onclick="toggleProfileModal()"></i>
+            </div>
+            
+            <div class="profile-photo-section">
+                <div class="photo-container">
+                    <img id="profilePreview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==" alt="Foto de Perfil">
+                    <label for="photoUpload" class="edit-photo-btn"><i class="fa-solid fa-camera"></i></label>
+                    <input type="file" id="photoUpload" accept="image/*" hidden onchange="previewImage(event)">
+                    <input type="hidden" id="newPhotoBase64">
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Clique na câmera para alterar</p>
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label class="main-label">Nome Completo</label>
+                <input type="text" id="profileName" readonly class="form-control" style="background: var(--bg-project);">
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+                <label class="main-label">E-mail</label>
+                <input type="email" id="profileEmail" readonly class="form-control" style="background: var(--bg-project);">
+            </div>
+            <div class="form-group" style="margin-bottom:15px;">
+                <label class="main-label">Setor/Departamento</label>
+                <input type="text" id="profileDept" readonly class="form-control" style="background: var(--bg-project);">
+            </div>
+
+            <div class="setting-item">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 700; color: var(--text-dark);">Notificações</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Receber alertas e popups</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="notifyToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 20px;">
+                <button style="background:transparent; border:1px solid var(--border-soft); color:var(--text-muted); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="toggleProfileModal()">Cancelar</button>
+                <button style="background:var(--primary); border:none; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="saveProfile()">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalBloqueioDoR" style="z-index: 3000;">
+        <div class="modal-box small" style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-soft); border-radius: 12px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: #dc3545; margin-bottom: 15px;"></i>
+            <h3 id="erroTitulo" style="margin: 0 0 10px 0;">Erro de Validação</h3>
+            <p id="erroSubtitulo" style="font-size: 0.9rem; color: var(--text-muted); margin: 0;"></p>
+            <div class="lista-erros" id="listaErrosDoR" style="display:none;"></div>
+            <div style="display:flex; justify-content:center; gap:15px; margin-top: 20px;">
+                <button style="background:var(--primary); border:none; color:white; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="fecharModal('modalBloqueioDoR')">Entendi</button>
+                <button id="btnPreencherAgora" style="display:none; background:#198754; border:none; color:white; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="abrirPreenchimentoObrigatorio()"><i class="fa-solid fa-pen"></i> Preencher agora</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalInputWbs" style="z-index: 2500;">
+        <div class="modal-box small" style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-soft); border-radius: 12px; text-align:left;">
+            <h3 id="wbsInputTitle" style="margin-top:0; color:var(--primary)">Nova Etapa</h3>
+            <input type="hidden" id="wbsInputType"> 
+            <input type="hidden" id="wbsInputEtapaId"> 
+            <input type="hidden" id="wbsInputIdEdicao"> 
+
+            <div class="form-group" style="margin-bottom:15px;"><label id="wbsInputLabel1">Nome</label><input type="text" id="wbsInputValue1"></div>
+            <div class="form-group" style="margin-bottom:15px;"><label id="wbsInputLabel2">Responsável (Dev)</label><select id="wbsInputValue2"></select></div>
+            
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 20px;">
+                <button style="background:transparent; border:1px solid var(--border-soft); color:var(--text-muted); padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="fecharModal('modalInputWbs')">Cancelar</button>
+                <button style="background:var(--primary); border:none; color:white; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:600;" onclick="salvarWbsInput()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="global.js"></script>
+    <script>
+        const API_URL = "http://192.168.100.132:3000/api";
+        const SOCKET_URL = "http://192.168.100.132:3000";
+        const socket = io(SOCKET_URL);
+        
+        let projetosDB = []; let chamadosDB = []; let usuariosDB = []; let projetoBloqueadoAtual = null; 
+        let isEditandoProjetoGlobal = true; 
+
+        // ==========================================
+        // DADOS DO USUÁRIO & HEADER
+        // ==========================================
+        const usuarioLogado = JSON.parse(sessionStorage.getItem("usuarioLogado"));
+        if (!usuarioLogado) {
+            window.location.href = "login.html";
+        } else {
+            // Seta as info no Header
+            document.getElementById('userName').innerText = usuarioLogado.nome.split(' ')[0];
+            document.getElementById('userRole').innerText = usuarioLogado.role || 'Colaborador';
+            
+            // Corrige o uso da imagem para base64 fallback em caso de falta de foto real
+            const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
+            document.getElementById('userAvatar').src = usuarioLogado.foto || defaultAvatar;
+            
+            if(document.getElementById('menuUser')) {
+                document.getElementById('menuUser').innerText = usuarioLogado.nome;
+                document.getElementById('menuRole').innerText = usuarioLogado.role || 'Colaborador';
+            }
+        }
+
+        socket.on('atualizar_projetos', () => { 
+            carregarDados(); 
+            if(document.getElementById('modalNovoProjeto').style.display === 'flex' && document.getElementById('projIdEdicao').value) {
+                carregarWbs(document.getElementById('projIdEdicao').value); 
+            }
+        });
+
+        async function carregarDados() {
+            try {
+                const r = await fetch(`${API_URL}/projetos`); projetosDB = await r.json();
+                const rC = await fetch(`${API_URL}/chamados`); chamadosDB = await rC.json();
+                renderizarProjetos();
+            } catch (e) { console.error(e); }
+        }
+
+        async function carregarUsuarios() {
+            try {
+                const res = await fetch(`${API_URL}/usuarios`); usuariosDB = await res.json();
+                
+                const selSol = document.getElementById('projSolicitante');
+                selSol.innerHTML = '<option value="">Selecione...</option>';
+                usuariosDB.forEach(u => selSol.innerHTML += `<option value="${u.nome}">${u.nome}</option>`);
+
+                const tecnicos = usuariosDB.filter(u => u.role === 'Desenvolvedor' || u.role === 'Admin');
+                const selResp = document.getElementById('projResp');
+                const filterResp = document.getElementById('filterResp');
+                const projValidador = document.getElementById('projValidador');
+                const wbsResp = document.getElementById('wbsInputValue2');
+                
+                let htmlOpts = '<option value="">Selecione...</option>';
+                tecnicos.forEach(t => htmlOpts += `<option value="${t.nome}">${t.nome}</option>`);
+                
+                selResp.innerHTML = htmlOpts; 
+                wbsResp.innerHTML = htmlOpts; 
+                projValidador.innerHTML = htmlOpts;
+                filterResp.innerHTML = '<option value="todos">Todos os Devs</option>' + htmlOpts;
+            } catch(e) {}
+        }
+
+        // ==========================================
+        // LÓGICA DO MENU DE PERFIL
+        // ==========================================
+        function toggleProfileMenu(e) {
+            e.stopPropagation();
+            document.getElementById('profileMenu').classList.toggle('active');
+        }
+
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                loadUserData(); 
+                const menu = document.getElementById('profileMenu');
+                if(menu) menu.classList.remove('active');
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('profilePreview').src = reader.result;
+                document.getElementById('newPhotoBase64').value = reader.result;
+            }
+            if (event.target.files[0]) {
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        }
+
+        function loadUserData() {
+            if(!usuarioLogado) return;
+            document.getElementById('profileName').value = usuarioLogado.nome || '';
+            document.getElementById('profileEmail').value = usuarioLogado.email || '';
+            document.getElementById('profileDept').value = usuarioLogado.setor || '';
+            document.getElementById('notifyToggle').checked = usuarioLogado.recebe_notificacao !== false;
+            
+            const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2EwYWVjMCI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==';
+            document.getElementById('profilePreview').src = usuarioLogado.foto || defaultAvatar;
+            document.getElementById('newPhotoBase64').value = "";
+        }
+
+        async function saveProfile() {
+            const newPhoto = document.getElementById('newPhotoBase64').value;
+            const notifyStatus = document.getElementById('notifyToggle').checked;
+            
+            if(!usuarioLogado || !usuarioLogado.id) return;
+
+            try {
+                await fetch(`${API_URL}/usuarios/${usuarioLogado.id}/notificacoes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recebe_notificacao: notifyStatus })
+                });
+                usuarioLogado.recebe_notificacao = notifyStatus;
+            } catch(e) { console.error("Erro notificação", e); }
+
+            if (newPhoto) {
+                try {
+                    const payload = { nome: usuarioLogado.nome, email: usuarioLogado.email, setor: usuarioLogado.setor, role: usuarioLogado.role, foto: newPhoto };
+                    const res = await fetch(`${API_URL}/usuarios/${usuarioLogado.id}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    });
+                    if(res.ok) {
+                        usuarioLogado.foto = newPhoto;
+                        document.getElementById('userAvatar').src = newPhoto;
+                    }
+                } catch(e) { console.error("Erro foto", e); }
+            }
+
+            sessionStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
+            showToast("Perfil atualizado!", "success");
+            toggleProfileModal();
+        }
+
+        function fazerLogout() {
+            sessionStorage.removeItem("usuarioLogado");
+            window.location.href = "login.html";
+        }
+
+
+        // ==========================================
+        // CONTINUAÇÃO DA LÓGICA DO PROJETO
+        // ==========================================
+        function mudarAba(abaNum) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.getElementById('btnTab' + abaNum).classList.add('active'); 
+            document.getElementById('tabContent' + abaNum).classList.add('active');
+            
+            if(abaNum === 2) {
+                const idProjeto = document.getElementById('projIdEdicao').value;
+                if(!idProjeto) { 
+                    document.getElementById('wbsApp').style.display = 'none'; 
+                    document.getElementById('avisoWbsNovo').style.display = 'block'; 
+                } else { 
+                    document.getElementById('avisoWbsNovo').style.display = 'none'; 
+                    document.getElementById('wbsApp').style.display = 'flex'; 
+                    carregarWbs(idProjeto); 
+                }
+            }
+        }
+
+        function verificarPermissaoStatus() {
+            const statusSelect = document.getElementById('projStatus');
+            const respSelect = document.getElementById('projResp').value;
+            const aviso = document.getElementById('avisoStatus');
+            const isNovo = !document.getElementById('projIdEdicao').value;
+
+            if (usuarioLogado.nome === respSelect || usuarioLogado.role === 'Admin' || isNovo) {
+                statusSelect.disabled = false;
+                if(aviso) aviso.style.display = 'none';
+            } else {
+                statusSelect.disabled = true;
+                if(aviso) aviso.style.display = 'block';
+            }
+        }
+
+        function alternarModoEdicao(habilitado) {
+            isEditandoProjetoGlobal = habilitado;
+
+            const inputs = document.querySelectorAll('#tabContent1 input, #tabContent1 select, #tabContent1 textarea');
+            inputs.forEach(el => {
+                if(el.id === 'projSetor' || el.id === 'projStatus') return; 
+                el.disabled = !habilitado;
+            });
+            document.getElementById('btnBuscarChamado').disabled = !habilitado;
+            
+            if (habilitado && document.getElementById('projSemPrazo').checked) {
+                document.getElementById('projFim').disabled = true;
+            }
+
+            document.getElementById('btnHabilitarEdicao').style.display = habilitado ? 'none' : 'block';
+            document.getElementById('btnSalvarProj').style.display = habilitado ? 'block' : 'none';
+
+            const btnAddEtapaPrincipal = document.getElementById('btnAddEtapaPrincipal');
+            if(btnAddEtapaPrincipal) btnAddEtapaPrincipal.style.display = habilitado ? 'block' : 'none';
+
+            const idProjeto = document.getElementById('projIdEdicao').value;
+            if(idProjeto) carregarWbs(idProjeto);
+            
+            verificarPermissaoStatus();
+        }
+
+        function habilitarEdicaoProjeto() {
+            alternarModoEdicao(true);
+            document.getElementById('modalProjTitleText').innerText = "Editando Projeto";
+            showToast("Modo de edição habilitado.", "info");
+        }
+
+        async function mudarStatusDireto() {
+            const id = document.getElementById('projIdEdicao').value;
+            const novoStatus = document.getElementById('projStatus').value;
+            
+            if (!id) return; 
+
+            const p = projetosDB.find(x => x.id == id);
+            if(p) {
+                if (p.status === 'backlog' && novoStatus !== 'backlog') { 
+                    const faltas = checarCamposObrigatorios(p); 
+                    if (faltas.length > 0) { 
+                        projetoBloqueadoAtual = p; 
+                        document.getElementById('projStatus').value = p.status; 
+                        mostrarErroPopUp('Completar dados do projeto', 'Para tirar este projeto do Backlog, preencha o planejamento mínimo:', faltas, true); 
+                        return; 
+                    } 
+                } 
+                
+                // MUDANÇA: Verifica se a EAP não está 100% APENAS se houverem etapas criadas.
+                if (novoStatus === 'concluido' && p.status !== 'concluido') { 
+                    const temEtapas = document.querySelectorAll('.etapa-card').length > 0;
+                    const wbsStats = document.getElementById('wbsMainText').innerText;
+                    
+                    if (temEtapas && wbsStats !== '100%') { 
+                        document.getElementById('projStatus').value = p.status; 
+                        mostrarErroPopUp('Bloqueio de Qualidade', 'O projeto possui atividades pendentes na aba "Plano de Execução". Finalize todas as atividades para concluir o projeto.', [], false); 
+                        return; 
+                    } 
+                } 
+                
+                const statusAntigo = p.status; 
+                p.status = novoStatus; 
+                renderizarProjetos(); 
+                
+                try { 
+                    const res = await fetch(`${API_URL}/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: novoStatus }) }); 
+                    if(!res.ok) { 
+                        const erro = await res.json(); 
+                        showToast(erro.error, "error"); 
+                        p.status = statusAntigo; 
+                        document.getElementById('projStatus').value = statusAntigo;
+                        renderizarProjetos(); 
+                    } else {
+                        showToast("Status atualizado com sucesso!", "success");
+                    }
+                } catch(e) { 
+                    p.status = statusAntigo; 
+                    document.getElementById('projStatus').value = statusAntigo;
+                    renderizarProjetos(); 
+                } 
+            }
+        }
+
+        async function carregarWbs(idProjeto) {
+            try {
+                const res = await fetch(`${API_URL}/projetos/${idProjeto}/wbs`); 
+                const dados = await res.json(); 
+                
+                renderizarWbs(dados);
+                
+                const projetoAtual = projetosDB.find(x => x.id == idProjeto);
+                if (projetoAtual && projetoAtual.progresso !== dados.progressoGeral) {
+                    await fetch(`${API_URL}/projetos/${idProjeto}`, { 
+                        method: 'PUT', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ progresso: dados.progressoGeral }) 
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderizarWbs(dados) {
+            document.getElementById('wbsStats').innerText = `${dados.totalAtividadesProjeto - dados.pendentes} de ${dados.totalAtividadesProjeto} atividades concluídas`;
+            document.getElementById('wbsMainBar').style.width = `${dados.progressoGeral}%`; 
+            document.getElementById('wbsMainText').innerText = `${dados.progressoGeral}%`;
+            
+            const container = document.getElementById('wbsEtapasLista'); 
+            container.innerHTML = '';
+            
+            if(dados.etapas.length === 0) { 
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; width:100%;">Nenhuma etapa criada.</p>'; 
+                return; 
+            }
+
+            const displayAcoes = isEditandoProjetoGlobal ? 'inline-flex' : 'none';
+            const displayBtnAddAtiv = isEditandoProjetoGlobal ? 'block' : 'none';
+
+            dados.etapas.forEach((et, indexEtapa) => {
+                const numEtapa = indexEtapa + 1;
+                let htmlAtividades = '';
+                
+                if (et.atividades.length > 0) {
+                    htmlAtividades += '<div class="atividades-container">';
+                    et.atividades.forEach((a, indexAtiv) => {
+                        const numAtiv = `${numEtapa}.${indexAtiv + 1}`; 
+                        const checked = a.concluida ? 'checked' : ''; 
+                        const lineClass = a.concluida ? 'concluida' : '';
+                        const titleEscaped = a.titulo.replace(/'/g, "\\'"); 
+                        const respEscaped = (a.responsavel || '').replace(/'/g, "\\'");
+
+                        htmlAtividades += `
+                            <div class="atividade-row-wrapper">
+                                <div class="atividade-row">
+                                    <div class="atividade-left">
+                                        <input type="checkbox" class="atividade-checkbox" ${checked} onchange="toggleAtividade(${a.id}, this.checked)">
+                                        <span class="atividade-eap-badge">${numAtiv}</span>
+                                        <span class="atividade-title ${lineClass}">${a.titulo}</span>
+                                    </div>
+                                    <div class="atividade-badges">
+                                        <span class="badge-user" title="Responsável"><i class="fa-solid fa-person-digging"></i> ${a.responsavel || 'ND'}</span>
+                                        <i class="fa-solid fa-pen action-icon" style="display:${displayAcoes};" onclick="editarAtividade(${a.id}, '${titleEscaped}', '${respEscaped}')" title="Editar"></i>
+                                        <i class="fa-solid fa-trash action-icon trash" style="display:${displayAcoes};" onclick="excluirAtividade(${a.id})" title="Excluir"></i>
+                                    </div>
+                                </div>
+                            </div>`;
+                    });
+                    htmlAtividades += '</div>';
+                }
+
+                const etNomeEscaped = et.nome.replace(/'/g, "\\'"); 
+                const etRespEscaped = (et.responsavel || '').replace(/'/g, "\\'");
+
+                container.innerHTML += `
+                    <div class="etapa-card">
+                        <div class="etapa-header">
+                            <div class="etapa-title">
+                                <span class="eap-badge">${numEtapa}.0</span>
+                                ${et.nome} 
+                                <span style="font-size:0.8rem; font-weight:500; color:var(--text-muted); background:var(--border-soft); padding:3px 8px; border-radius:12px; margin-left:8px;">👤 ${et.responsavel || 'ND'}</span>
+                                <i class="fa-solid fa-pen action-icon" style="margin-left:10px; display:${displayAcoes};" onclick="editarEtapa(${et.id}, '${etNomeEscaped}', '${etRespEscaped}')" title="Editar Etapa"></i>
+                                <i class="fa-solid fa-trash action-icon trash" style="display:${displayAcoes};" onclick="excluirEtapa(${et.id})" title="Excluir Etapa"></i>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px; width:150px;">
+                                <div class="prog-bg"><div class="prog-fill" style="width:${et.progresso}%; background:var(--primary)"></div></div>
+                                <span style="font-weight:700; font-size:0.85rem;">${et.progresso}%</span>
+                            </div>
+                        </div>
+                        ${htmlAtividades}
+                        <button class="btn-add-atividade" style="display:${displayBtnAddAtiv};" onclick="criarNovaAtividade(${et.id})"><i class="fa-solid fa-plus"></i> Adicionar Atividade</button>
+                    </div>`;
+            });
+        }
+
+        function criarNovaEtapa() { document.getElementById('wbsInputTitle').innerText = "Nova Etapa"; document.getElementById('wbsInputLabel1').innerText = "Nome da Etapa"; document.getElementById('wbsInputType').value = "etapa"; document.getElementById('wbsInputIdEdicao').value = ""; document.getElementById('wbsInputValue1').value = ""; document.getElementById('wbsInputValue2').value = ""; document.getElementById('modalInputWbs').style.display = "flex"; }
+        function editarEtapa(id, nome, responsavel) { document.getElementById('wbsInputTitle').innerText = "Editar Etapa"; document.getElementById('wbsInputLabel1').innerText = "Nome da Etapa"; document.getElementById('wbsInputType').value = "etapa"; document.getElementById('wbsInputIdEdicao').value = id; document.getElementById('wbsInputValue1').value = nome; document.getElementById('wbsInputValue2').value = responsavel; document.getElementById('modalInputWbs').style.display = "flex"; }
+        function criarNovaAtividade(etapaId) { document.getElementById('wbsInputTitle').innerText = "Nova Atividade"; document.getElementById('wbsInputLabel1').innerText = "O que deve ser feito?"; document.getElementById('wbsInputType').value = "atividade"; document.getElementById('wbsInputEtapaId').value = etapaId; document.getElementById('wbsInputIdEdicao').value = ""; document.getElementById('wbsInputValue1').value = ""; document.getElementById('wbsInputValue2').value = ""; document.getElementById('modalInputWbs').style.display = "flex"; }
+        function editarAtividade(id, titulo, responsavel) { document.getElementById('wbsInputTitle').innerText = "Editar Atividade"; document.getElementById('wbsInputLabel1').innerText = "O que deve ser feito?"; document.getElementById('wbsInputType').value = "atividade"; document.getElementById('wbsInputIdEdicao').value = id; document.getElementById('wbsInputValue1').value = titulo; document.getElementById('wbsInputValue2').value = responsavel; document.getElementById('modalInputWbs').style.display = "flex"; }
+
+        async function salvarWbsInput() {
+            const tipo = document.getElementById('wbsInputType').value; const idEdicao = document.getElementById('wbsInputIdEdicao').value; const val1 = document.getElementById('wbsInputValue1').value; const val2 = document.getElementById('wbsInputValue2').value; const idProj = document.getElementById('projIdEdicao').value;
+            if(!val1) { showToast("Digite o nome.", "error"); return; }
+            try {
+                if(tipo === 'etapa') { 
+                    if(idEdicao) await fetch(`${API_URL}/etapas/${idEdicao}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome: val1, responsavel: val2 }) });
+                    else await fetch(`${API_URL}/projetos/${idProj}/etapas`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ nome: val1, responsavel: val2 }) }); 
+                } else { 
+                    if(idEdicao) await fetch(`${API_URL}/atividades/${idEdicao}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ titulo: val1, responsavel: val2 }) });
+                    else { const etapaId = document.getElementById('wbsInputEtapaId').value; await fetch(`${API_URL}/etapas/${etapaId}/atividades`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ titulo: val1, responsavel: val2 }) }); }
+                }
+                fecharModal('modalInputWbs');
+            } catch(e) { console.error(e); }
+        }
+
+        async function toggleAtividade(id, concluida) { try { await fetch(`${API_URL}/atividades/${id}/toggle`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ concluida }) }); } catch(e){} }
+        async function excluirEtapa(id) { if(confirm('Tem certeza? Isso apagará TODAS as atividades desta etapa!')) { try { await fetch(`${API_URL}/etapas/${id}`, { method: 'DELETE' }); } catch(e) {} } }
+        async function excluirAtividade(id) { if(confirm('Excluir esta atividade?')) { try { await fetch(`${API_URL}/atividades/${id}`, { method: 'DELETE' }); } catch(e) {} } }
+
+        async function excluirProjetoDefinitivo() {
+            const id = document.getElementById('projIdEdicao').value;
+            if(!id) return;
+            
+            if(confirm("ATENÇÃO: Tem certeza que deseja excluir este projeto permanentemente? Todas as etapas e atividades serão apagadas!")) {
+                try {
+                    const res = await fetch(`${API_URL}/projetos/${id}`, { method: 'DELETE' });
+                    if(res.ok) {
+                        showToast("Projeto excluído com sucesso!", "success");
+                        fecharModal('modalNovoProjeto');
+                        carregarDados();
+                    } else {
+                        showToast("Erro ao excluir projeto.", "error");
+                    }
+                } catch(e) {
+                    showToast("Erro no servidor.", "error");
+                }
+            }
+        }
+
+        function atualizarSetorSolicitante() { const u = usuariosDB.find(x => x.nome === document.getElementById('projSolicitante').value); document.getElementById('projSetor').value = u && u.setor ? u.setor : ''; }
+        function verificarTecnologiaOutro() { const s = document.getElementById('projTechSelect'); const m = document.getElementById('projTechManual'); if(s.value === 'Outro') { m.style.display = 'block'; m.focus(); } else { m.style.display = 'none'; m.value = ''; } }
+        function toggleSemPrazo() { const c = document.getElementById('projSemPrazo'); const d = document.getElementById('projFim'); const p = document.getElementById('projPrioridade').value; if(c.checked) { if(p === 'Crítica') { showToast("Críticos DEVEM ter prazo.", "error"); c.checked=false; return; } d.disabled=true; d.value=''; d.classList.remove('input-error'); } else { d.disabled=false; } }
+        function verificarPrioridade() { const p = document.getElementById('projPrioridade').value; const r = document.getElementById('reqPrazo'); const c = document.getElementById('projSemPrazo'); const d = document.getElementById('projFim'); if(p === 'Crítica') { r.style.display='inline'; if(c.checked) { c.checked=false; d.disabled=false; showToast("Opção desmarcada pela prioridade.", "info"); } } else { r.style.display='none'; } }
+        
+        function buscarChamadoVinculado() {
+            const id = document.getElementById('projOrigemId').value; if(!id) return; const c = chamadosDB.find(x => x.id == id);
+            if(c) { 
+                document.getElementById('projTitulo').value = `[PROJ] ${c.titulo}`; document.getElementById('projDescricao').value = c.descricao; 
+                const n = c.solicitante_nome || c.criador_email; const o = Array.from(document.getElementById('projSolicitante').options).some(x => x.value === n); 
+                if(o) { document.getElementById('projSolicitante').value = n; atualizarSetorSolicitante(); } else { document.getElementById('projSetor').value = c.setor || ''; } 
+                if(c.risco_critico === 'Alto') document.getElementById('projPrioridade').value = 'Alta'; 
+                showToast("Dados importados!", "success"); 
+            } else { showToast("Não encontrado.", "error"); }
+        }
+
+        function abrirModalProjeto(idEdicao = null) {
+            document.querySelectorAll('#modalNovoProjeto input:not([readonly]):not([type="checkbox"]), #modalNovoProjeto textarea').forEach(i => i.value = '');
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            document.getElementById('projSetor').value = ''; document.getElementById('projSolicitante').value = '';
+            document.getElementById('projTechSelect').value = 'Sankhya'; verificarTecnologiaOutro();
+            document.getElementById('projIdEdicao').value = '';
+            document.getElementById('projSemPrazo').checked = false; document.getElementById('projFim').disabled = false;
+            
+            mudarAba(1);
+
+            if (idEdicao) {
+                const p = projetosDB.find(x => x.id == idEdicao);
+                if(p) {
+                    document.getElementById('modalProjTitleText').innerHTML = 'Visualizando Projeto';
+                    document.getElementById('headerProjId').innerText = `#${idEdicao}`;
+                    document.getElementById('headerProjId').style.background = '#6c757d';
+                    
+                    document.getElementById('projIdEdicao').value = p.id;
+                    document.getElementById('projOrigemId').value = p.chamado_origem_id || '';
+                    document.getElementById('projSolicitante').value = p.solicitante || '';
+                    document.getElementById('projSetor').value = p.setor || '';
+                    document.getElementById('projTitulo').value = p.titulo || '';
+                    document.getElementById('projDescricao').value = p.descricao || '';
+                    document.getElementById('projTipo').value = p.tipo || 'Novo Desenvolvimento';
+                    document.getElementById('projImpacto').value = p.impacto_negocio || 'Médio';
+                    document.getElementById('projPrioridade').value = p.prioridade || 'Média';
+                    document.getElementById('projResp').value = p.responsavel || '';
+                    document.getElementById('projValidador').value = p.validador || '';
+                    
+                    if(p.data_inicio) document.getElementById('projInicio').value = p.data_inicio.split('T')[0];
+                    if(p.sem_prazo) { document.getElementById('projSemPrazo').checked = true; document.getElementById('projFim').disabled = true; } else if (p.prazo) { document.getElementById('projFim').value = p.prazo.split('T')[0]; }
+                    
+                    document.getElementById('projEstimativa').value = p.estimativa || '';
+                    document.getElementById('projComplexidade').value = p.complexidade || '';
+                    document.getElementById('projStatus').value = p.status || 'backlog';
+                    document.getElementById('projObs').value = p.observacoes || '';
+                    
+                    const tp = ['Sankhya', 'Microsoft 365', 'Câmeras', 'Desenvolvimento de aplicações'];
+                    if (p.tecnologia && !tp.includes(p.tecnologia)) { document.getElementById('projTechSelect').value = 'Outro'; verificarTecnologiaOutro(); document.getElementById('projTechManual').value = p.tecnologia; } else { document.getElementById('projTechSelect').value = p.tecnologia || 'Sankhya'; }
+                    
+                    const btnExcluir = document.getElementById('btnExcluirProj');
+                    if (usuarioLogado.nome === p.responsavel || usuarioLogado.role === 'Admin') {
+                        btnExcluir.style.display = 'block';
+                    } else {
+                        btnExcluir.style.display = 'none';
+                    }
+
+                    alternarModoEdicao(false);
+                }
+            } else {
+                document.getElementById('modalProjTitleText').innerHTML = 'Novo Projeto';
+                document.getElementById('headerProjId').innerText = 'Novo';
+                document.getElementById('headerProjId').style.background = 'var(--primary)';
+                document.getElementById('projStatus').value = 'backlog'; 
+                document.getElementById('projPrioridade').value = 'Média';
+                if(usuarioLogado && usuarioLogado.nome) document.getElementById('projResp').value = usuarioLogado.nome;
+                
+                document.getElementById('btnExcluirProj').style.display = 'none';
+
+                alternarModoEdicao(true);
+            }
+            document.getElementById('modalNovoProjeto').style.display = 'flex';
+        }
+        
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        window.addEventListener('click', function(event) {
+            const menu = document.getElementById('profileMenu');
+            if (menu && menu.classList.contains('active')) {
+                menu.classList.remove('active');
+            }
+
+            if (event.target === document.getElementById('modalNovoProjeto')) fecharModal('modalNovoProjeto');
+            if (event.target === document.getElementById('modalBloqueioDoR')) fecharModal('modalBloqueioDoR');
+            if (event.target === document.getElementById('modalInputWbs')) fecharModal('modalInputWbs');
+            if (event.target === document.getElementById('profileModal')) toggleProfileModal();
+        });
+        
+        async function salvarProjeto() {
+            const idEdicao = document.getElementById('projIdEdicao').value;
+            const titulo = document.getElementById('projTitulo').value;
+            const prioridade = document.getElementById('projPrioridade').value;
+            const sem_prazo = document.getElementById('projSemPrazo').checked;
+            const prazo = document.getElementById('projFim').value;
+            const statusAtualizado = document.getElementById('projStatus').value;
+            
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+            
+            if(!titulo.trim()) { showToast("Título obrigatório.", "error"); return; }
+            if(prioridade === 'Crítica' && sem_prazo) { showToast("Críticos DEVEM ter prazo.", "error"); return; }
+
+            const statusOriginal = idEdicao ? projetosDB.find(x => x.id == idEdicao).status : 'backlog';
+            
+            if (statusOriginal === 'backlog' && statusAtualizado !== 'backlog') {
+                const pMock = {
+                    responsavel: document.getElementById('projResp').value,
+                    data_inicio: document.getElementById('projInicio').value,
+                    prazo: document.getElementById('projFim').value,
+                    sem_prazo: document.getElementById('projSemPrazo').checked,
+                    estimativa: document.getElementById('projEstimativa').value,
+                    complexidade: document.getElementById('projComplexidade').value
+                };
+                const faltas = checarCamposObrigatorios(pMock);
+                if (faltas.length > 0) {
+                    faltas.forEach(f => document.getElementById(f.inputId).classList.add('input-error'));
+                    showToast("Preencha os campos destacados para sair do Backlog.", "error");
+                    document.getElementById('projStatus').value = statusOriginal; 
+                    return;
+                }
+            }
+            
+            // MUDANÇA: Exige 100% no salvarProjeto APENAS se houver WBS criado
+            if (statusAtualizado === 'concluido' && statusOriginal !== 'concluido') {
+                const temEtapas = document.querySelectorAll('.etapa-card').length > 0;
+                const wbsStats = document.getElementById('wbsMainText').innerText;
+                if (temEtapas && wbsStats !== '100%') {
+                    showToast('Finalize todas as atividades (100%) para concluir o projeto.', 'error');
+                    document.getElementById('projStatus').value = statusOriginal; 
+                    return;
+                }
+            }
+
+            let techFinal = document.getElementById('projTechSelect').value; 
+            if (techFinal === 'Outro') techFinal = document.getElementById('projTechManual').value;
+
+            const payload = {
+                titulo: titulo, descricao: document.getElementById('projDescricao').value,
+                chamado_origem_id: document.getElementById('projOrigemId').value || null,
+                solicitante: document.getElementById('projSolicitante').value, setor: document.getElementById('projSetor').value,
+                tipo: document.getElementById('projTipo').value, impacto_negocio: document.getElementById('projImpacto').value,
+                prioridade: prioridade, responsavel: document.getElementById('projResp').value,
+                validador: document.getElementById('projValidador').value,
+                data_inicio: document.getElementById('projInicio').value || null,
+                sem_prazo: sem_prazo, prazo: sem_prazo ? null : (prazo || null),
+                estimativa: document.getElementById('projEstimativa').value, complexidade: document.getElementById('projComplexidade').value,
+                tecnologia: techFinal, observacoes: document.getElementById('projObs').value,
+                status: statusAtualizado 
+            };
+
+            try {
+                let res;
+                if (idEdicao) { res = await fetch(`${API_URL}/projetos/${idEdicao}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); } 
+                else { res = await fetch(`${API_URL}/projetos`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); }
+                
+                if(res.ok) {
+                    showToast(`Projeto salvo!`, "success");
+                    if(!idEdicao) { const j = await res.json(); document.getElementById('projIdEdicao').value = j.id; }
+                    carregarDados();
+                    alternarModoEdicao(false);
+                    document.getElementById('modalProjTitleText').innerText = "Visualizando Projeto";
+                } else { const erroInfo = await res.json(); showToast(erroInfo.error || "Erro.", "error"); }
+            } catch(e) { showToast("Erro no servidor.", "error"); }
+        }
+
+        function checarCamposObrigatorios(p) { let faltas = []; if(!p.responsavel) faltas.push({ inputId: 'projResp', nome: 'Responsável Líder' }); if(!p.data_inicio) faltas.push({ inputId: 'projInicio', nome: 'Data de Início' }); if(!p.prazo && !p.sem_prazo) faltas.push({ inputId: 'projFim', nome: 'Data Prevista ou "Sem Prazo"' }); if(!p.estimativa) faltas.push({ inputId: 'projEstimativa', nome: 'Estimativa de Tempo' }); if(!p.complexidade) faltas.push({ inputId: 'projComplexidade', nome: 'Complexidade' }); return faltas; }
+        function mostrarErroPopUp(titulo, subtitulo, listaErros = [], mostrarBotaoPreencher = false) { document.getElementById('erroTitulo').innerText = titulo; document.getElementById('erroSubtitulo').innerText = subtitulo; const u = document.getElementById('listaErrosDoR'); if(listaErros.length > 0) { u.style.display = 'block'; u.innerHTML = '<ul>' + listaErros.map(f => `<li>❌ Falta definir: <b>${f.nome}</b></li>`).join('') + '</ul>'; } else { u.style.display = 'none'; } document.getElementById('btnPreencherAgora').style.display = mostrarBotaoPreencher ? 'block' : 'none'; document.getElementById('modalBloqueioDoR').style.display = 'flex'; }
+        
+        function abrirPreenchimentoObrigatorio() { 
+            fecharModal('modalBloqueioDoR'); 
+            abrirModalProjeto(projetoBloqueadoAtual.id); 
+            habilitarEdicaoProjeto(); 
+            checarCamposObrigatorios(projetoBloqueadoAtual).forEach(f => { const el = document.getElementById(f.inputId); if(el && !el.disabled) el.classList.add('input-error'); }); 
+        }
+        
+        function exibirPrazoFormatado(p) { if(p.sem_prazo) return '<span class="badge-semprazo"><i class="fa-solid fa-hourglass-empty"></i> Sem prazo</span>'; return p.prazo ? new Date(new Date(p.prazo).getTime() + new Date().getTimezoneOffset()*60000).toLocaleDateString('pt-BR') : '-'; }
+
+        function renderizarProjetos() { const termo = document.getElementById('searchProjeto').value.toLowerCase(); const fStatus = document.getElementById('filterStatus').value; const fResp = document.getElementById('filterResp').value; const lista = projetosDB.filter(p => { return (p.titulo.toLowerCase().includes(termo) || p.id.toString().includes(termo)) && (fStatus === 'todos' || p.status === fStatus) && (fResp === 'todos' || p.responsavel === fResp); }); if ((localStorage.getItem('projetosViewMode') || 'list') === 'list') renderizarLista(lista); else renderizarKanban(lista); }
+        function renderizarLista(lista) { const tbody = document.getElementById('tabelaProjetosBody'); tbody.innerHTML = ''; if(lista.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Vazio.</td></tr>'; return; } lista.forEach(p => { const st = { 'backlog': {t:'Backlog',c:'st-backlog',f:'var(--primary)'}, 'andamento': {t:'Em Andamento',c:'st-andamento',f:'#ffc107'}, 'homologacao': {t:'Homologação',c:'st-homologacao',f:'#0dcaf0'}, 'concluido': {t:'Concluído',c:'st-concluido',f:'#198754'} }[p.status] || {t:'Backlog',c:'st-backlog',f:'var(--primary)'}; let dorBadge = ''; if(p.status === 'backlog') { dorBadge = checarCamposObrigatorios(p).length > 0 ? `<br><span class="status-badge badge-incompleto" style="margin-top:5px;"><i class="fa-solid fa-lock"></i> Planej. Incompleto</span>` : `<br><span class="status-badge badge-pronto" style="margin-top:5px;"><i class="fa-solid fa-check"></i> Pronto p/ Iniciar</span>`; } tbody.innerHTML += `<tr onclick="abrirModalProjeto(${p.id})"><td style="color:var(--text-muted)">#${p.id}</td><td style="font-weight:700;">${p.prioridade === 'Crítica' ? '🔴 ' : ''}${p.titulo}</td><td><span class="badge ${st.c}">${st.t}</span>${dorBadge}</td><td>${p.responsavel || 'Não def.'}</td><td>${exibirPrazoFormatado(p)}</td><td><div class="prog-container"><div class="prog-bg"><div class="prog-fill" style="width:${p.progresso}%; background:${st.f}"></div></div><div style="font-size:0.8rem; font-weight:700; width:35px">${p.progresso}%</div></div></td></tr>`; }); }
+        function renderizarKanban(lista) { ['backlog', 'andamento', 'homologacao', 'concluido'].forEach(c => { document.getElementById(`col-${c}`).innerHTML = ''; document.getElementById(`count-${c}`).innerText = '0'; }); lista.forEach(p => { const st = { 'backlog': {f:'var(--primary)'}, 'andamento': {f:'#ffc107'}, 'homologacao': {f:'#0dcaf0'}, 'concluido': {f:'#198754'} }[p.status] || {f:'var(--primary)'}; const card = document.createElement('div'); card.className = 'p-card'; card.draggable = true; card.ondragstart = (ev) => ev.dataTransfer.setData("text", p.id); card.onclick = () => abrirModalProjeto(p.id); let dorBadge = ''; if(p.status === 'backlog') { dorBadge = checarCamposObrigatorios(p).length > 0 ? `<div class="status-badge badge-incompleto" style="margin-bottom:8px;"><i class="fa-solid fa-lock"></i> Pendente Planejamento</div>` : `<div class="status-badge badge-pronto" style="margin-bottom:8px;"><i class="fa-solid fa-check"></i> Pronto p/ Iniciar</div>`; } card.innerHTML = `${dorBadge}<div style="display:flex; justify-content:space-between; margin-bottom:5px"><span style="font-size:0.75rem; color:var(--text-muted); font-weight:700">#${p.id}</span>${p.prioridade === 'Crítica' ? '<span style="color:#dc3545; font-size:0.7rem">🔴 CRÍTICA</span>' : ''}</div><div class="p-title">${p.titulo}</div><div style="font-size:0.8rem; color:var(--text-muted); display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;"><span><i class="fa-solid fa-user"></i> ${p.responsavel || 'N/A'}</span>${p.sem_prazo ? exibirPrazoFormatado(p) : `<span><i class="fa-regular fa-calendar"></i> ${exibirPrazoFormatado(p)}</span>`}</div><div class="prog-container"><div class="prog-bg" style="height:6px;"><div class="prog-fill" style="width:${p.progresso}%; background:${st.f}"></div></div><span style="font-size:0.7rem; font-weight:700;">${p.progresso}%</span></div>`; const col = document.getElementById(`col-${p.status}`); if(col) col.appendChild(card); }); ['backlog', 'andamento', 'homologacao', 'concluido'].forEach(c => document.getElementById(`count-${c}`).innerText = document.getElementById(`col-${c}`).childElementCount); }
+        function alterarView(modo) { localStorage.setItem('projetosViewMode', modo); document.getElementById('btnList').classList.remove('active'); document.getElementById('btnKanban').classList.remove('active'); document.getElementById('viewList').classList.remove('active'); document.getElementById('viewKanban').classList.remove('active'); if (modo === 'list') { document.getElementById('btnList').classList.add('active'); document.getElementById('viewList').classList.add('active'); } else { document.getElementById('btnKanban').classList.add('active'); document.getElementById('viewKanban').classList.add('active'); } renderizarProjetos(); }
+        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); } document.querySelectorAll('.k-body').forEach(c => c.addEventListener('dragleave', () => c.classList.remove('drag-over')));
+        
+        async function dropProjeto(ev) { 
+            ev.preventDefault(); ev.currentTarget.classList.remove('drag-over'); const id = ev.dataTransfer.getData("text"); const novoStatus = ev.currentTarget.id.replace('col-', ''); const p = projetosDB.find(x => x.id == id); 
+            if(p && p.status !== novoStatus) { 
+                if (p.status === 'backlog' && novoStatus !== 'backlog') { const faltas = checarCamposObrigatorios(p); if (faltas.length > 0) { projetoBloqueadoAtual = p; mostrarErroPopUp('Completar dados do projeto', 'Para tirar este projeto do Backlog, preencha o planejamento mínimo:', faltas, true); return; } } 
+                
+                // MUDANÇA: Exige 100% no drag and drop APENAS se houver WBS criado
+                if (novoStatus === 'concluido' && p.status !== 'concluido') { 
+                    try {
+                        const resWbs = await fetch(`${API_URL}/projetos/${id}/wbs`);
+                        if (resWbs.ok) {
+                            const dadosWbs = await resWbs.json();
+                            if (dadosWbs.etapas && dadosWbs.etapas.length > 0 && dadosWbs.progressoGeral < 100) {
+                                mostrarErroPopUp('Bloqueio de Qualidade', 'O projeto possui atividades pendentes na aba "Plano de Execução". Finalize todas as atividades para concluir o projeto.', [], false); 
+                                return; 
+                            }
+                        }
+                    } catch(e) { console.error(e); }
+                } 
+
+                const statusAntigo = p.status; p.status = novoStatus; renderizarProjetos(); 
+                try { 
+                    const res = await fetch(`${API_URL}/projetos/${id}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: novoStatus }) }); 
+                    if(!res.ok) { const erro = await res.json(); showToast(erro.error, "error"); p.status = statusAntigo; renderizarProjetos(); } 
+                } catch(e) { p.status = statusAntigo; renderizarProjetos(); } 
+            } 
+        }
+
+        carregarUsuarios(); carregarDados(); alterarView(localStorage.getItem('projetosViewMode') || 'list');
+    </script>
+</body>
+</html>
