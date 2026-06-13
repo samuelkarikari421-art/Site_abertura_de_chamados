@@ -1,6 +1,6 @@
 {
   "name": "karikari-helpdesk",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Sistema de Gestão de Chamados TI",
   "main": "main.js",
   "author": "Kari-Kari TI",
@@ -39,6 +39,7 @@
     "electron-log": "^5.1.1",
     "electron-updater": "^6.1.8",
     "express": "^4.18.3",
+    "node-notifier": "^10.0.1",
     "pg": "^8.11.3",
     "qrcode-terminal": "^0.12.0",
     "socket.io": "^4.7.4",

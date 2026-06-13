@@ -37,7 +37,8 @@ function createWindow() {
         else callback(false);
     });
 
-    mainWindow.loadFile(path.join(__dirname, 'frontend/login.html'));
+    // 🚀 A CIRURGIA: Aponta para o servidor vivo do Next.js em vez de ficheiros estáticos
+    mainWindow.loadURL('http://localhost:3000');
 
     mainWindow.on('closed', function () { mainWindow = null; });
 }
@@ -92,7 +93,11 @@ autoUpdater.on('error', (err) => {
 // ================= CICLO DE VIDA =================
 app.whenReady().then(() => {
     startServer(); 
-    createWindow();
+    
+    // Pequeno atraso (1 segundo) para dar tempo de o servidor iniciar na porta 3000 antes de abrir a janela
+    setTimeout(() => {
+        createWindow();
+    }, 1000);
 
     // Verifica updates após 5s se estiver em produção
     setTimeout(() => {

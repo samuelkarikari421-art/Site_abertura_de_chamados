@@ -1,8 +1,8 @@
-version: 1.0.6
+version: 1.0.7
 files:
-  - url: Kari-Kari TI Setup 1.0.6.exe
-    sha512: /BpZvsetfO0BvGXw2r5LkO7z85ut1NOiY5G8tBDSnChml7pqxwJxHFJBBXqzdrg9CKf/tP3pSfAOXIEuoy5ZJw==
-    size: 107361480
-path: Kari-Kari TI Setup 1.0.6.exe
-sha512: /BpZvsetfO0BvGXw2r5LkO7z85ut1NOiY5G8tBDSnChml7pqxwJxHFJBBXqzdrg9CKf/tP3pSfAOXIEuoy5ZJw==
-releaseDate: '2026-03-13T18:48:48.243Z'
+  - url: Kari-Kari TI Setup 1.0.7.exe
+    sha512: IpX2v5otUVCzq80bVx96jfkveZwdg4BivyYl8gOMxPf9XRqp8viBPo/qBcf4U39hRFJsKONv+0WjAxxGHRqJxQ==
+    size: 107371070
+path: Kari-Kari TI Setup 1.0.7.exe
+sha512: IpX2v5otUVCzq80bVx96jfkveZwdg4BivyYl8gOMxPf9XRqp8viBPo/qBcf4U39hRFJsKONv+0WjAxxGHRqJxQ==
+releaseDate: '2026-03-27T16:54:52.452Z'
